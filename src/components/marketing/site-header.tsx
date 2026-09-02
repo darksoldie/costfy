@@ -133,14 +133,24 @@ export function SiteHeader() {
             </Link>
           ))}
           {ready && session ? (
-            <button
-              type="button"
-              onClick={handleSignOut}
-              className="rounded-md px-3 py-2 text-left text-sm text-muted-foreground hover:bg-secondary hover:text-foreground"
-            >
-              Sair
-            </button>
+            <>
+              <Link
+                to="/dashboard"
+                onClick={() => setOpen(false)}
+                className="rounded-md px-3 py-2 text-sm text-foreground hover:bg-secondary"
+              >
+                Abrir app
+              </Link>
+              <button
+                type="button"
+                onClick={handleSignOut}
+                className="rounded-md px-3 py-2 text-left text-sm text-muted-foreground hover:bg-secondary hover:text-foreground"
+              >
+                Sair
+              </button>
+            </>
           ) : (
+
             <Link
               to="/login"
               onClick={() => setOpen(false)}
