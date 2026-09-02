@@ -1,9 +1,12 @@
-import { Link } from "@tanstack/react-router";
+import { useQueryClient } from "@tanstack/react-query";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { Menu, MoonStar, Sun } from "lucide-react";
 import { useState } from "react";
 
 import { CostfyLogo } from "@/components/brand/costfy-mark";
 import { useTheme } from "@/components/theme-provider";
+import { useSession } from "@/hooks/use-session";
+import { supabase } from "@/integrations/supabase/client";
 import { cn } from "@/lib/utils";
 
 const NAV = [
@@ -16,6 +19,19 @@ const NAV = [
 export function SiteHeader() {
   const [open, setOpen] = useState(false);
   const { resolvedTheme, toggleTheme } = useTheme();
+  const { session, ready } = useSession();
+  const queryClient = useQueryClient();
+  const navigate = useNavigate();
+
+  // Ordem importa: cancelar consultas, limpar cache, encerrar sessão, navegar.
+  async function handleSignOut() {
+    await queryClient.cancelQueries();
+    queryClient.clear();
+    await supabase.auth.signOut();
+    setOpen(false);
+    await navigate({ to: "/login", replace: true });
+  }
+
 
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-xl">
