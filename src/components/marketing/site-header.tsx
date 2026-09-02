@@ -70,12 +70,12 @@ export function SiteHeader() {
           </button>
           {ready && session ? (
             <>
-              <span
-                className="hidden max-w-[180px] truncate text-[13px] text-muted-foreground sm:inline"
-                title={session.user.email ?? undefined}
+              <Link
+                to="/dashboard"
+                className="inline-flex h-8 items-center rounded-md bg-primary px-3.5 text-[13px] font-medium text-primary-foreground transition-colors hover:bg-primary/90"
               >
-                {session.user.email}
-              </span>
+                Abrir app
+              </Link>
               <button
                 type="button"
                 onClick={handleSignOut}
@@ -85,6 +85,7 @@ export function SiteHeader() {
               </button>
             </>
           ) : (
+
             <>
               <Link
                 to="/login"
