@@ -68,18 +68,39 @@ export function SiteHeader() {
               <MoonStar className="size-4" />
             )}
           </button>
-          <Link
-            to="/login"
-            className="hidden h-8 items-center rounded-md px-3 text-[13px] font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground sm:inline-flex"
-          >
-            Entrar
-          </Link>
-          <Link
-            to="/signup"
-            className="inline-flex h-8 items-center rounded-md bg-primary px-3.5 text-[13px] font-medium text-primary-foreground transition-colors hover:bg-primary/90"
-          >
-            Começar
-          </Link>
+          {ready && session ? (
+            <>
+              <span
+                className="hidden max-w-[180px] truncate text-[13px] text-muted-foreground sm:inline"
+                title={session.user.email ?? undefined}
+              >
+                {session.user.email}
+              </span>
+              <button
+                type="button"
+                onClick={handleSignOut}
+                className="inline-flex h-8 items-center rounded-md border border-border px-3 text-[13px] font-medium text-foreground transition-colors hover:bg-secondary"
+              >
+                Sair
+              </button>
+            </>
+          ) : (
+            <>
+              <Link
+                to="/login"
+                className="hidden h-8 items-center rounded-md px-3 text-[13px] font-medium text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground sm:inline-flex"
+              >
+                Entrar
+              </Link>
+              <Link
+                to="/signup"
+                className="inline-flex h-8 items-center rounded-md bg-primary px-3.5 text-[13px] font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+              >
+                Começar
+              </Link>
+            </>
+          )}
+
           <button
             type="button"
             aria-label="Abrir menu"
