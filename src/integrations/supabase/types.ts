@@ -7,8 +7,6 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "14.5"
   }
@@ -292,25 +290,1276 @@ export type Database = {
         }
         Relationships: []
       }
+      // ---------- MARKETING ----------
+      campaigns: {
+        Row: {
+          id: string
+          workspace_id: string
+          integration_id: string | null
+          external_id: string | null
+          name: string
+          platform: string
+          status: Database["public"]["Enums"]["campaign_status"]
+          objective: string | null
+          budget: number | null
+          currency: string
+          start_at: string | null
+          end_at: string | null
+          metadata: Json | null
+          created_at: string
+          updated_at: string
+          deleted_at: string | null
+        }
+        Insert: {
+          id?: string
+          workspace_id: string
+          integration_id?: string | null
+          external_id?: string | null
+          name: string
+          platform: string
+          status?: Database["public"]["Enums"]["campaign_status"]
+          objective?: string | null
+          budget?: number | null
+          currency?: string
+          start_at?: string | null
+          end_at?: string | null
+          metadata?: Json | null
+          created_at?: string
+          updated_at?: string
+          deleted_at?: string | null
+        }
+        Update: {
+          id?: string
+          workspace_id?: string
+          integration_id?: string | null
+          external_id?: string | null
+          name?: string
+          platform?: string
+          status?: Database["public"]["Enums"]["campaign_status"]
+          objective?: string | null
+          budget?: number | null
+          currency?: string
+          start_at?: string | null
+          end_at?: string | null
+          metadata?: Json | null
+          created_at?: string
+          updated_at?: string
+          deleted_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "campaigns_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "campaigns_integration_id_fkey"
+            columns: ["integration_id"]
+            isOneToOne: false
+            referencedRelation: "integrations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ad_sets: {
+        Row: {
+          id: string
+          workspace_id: string
+          campaign_id: string
+          integration_id: string | null
+          external_id: string | null
+          name: string
+          status: Database["public"]["Enums"]["campaign_status"]
+          budget: number | null
+          currency: string
+          targeting: Json | null
+          optimization_goal: string | null
+          created_at: string
+          updated_at: string
+          deleted_at: string | null
+        }
+        Insert: {
+          id?: string
+          workspace_id: string
+          campaign_id: string
+          integration_id?: string | null
+          external_id?: string | null
+          name: string
+          status?: Database["public"]["Enums"]["campaign_status"]
+          budget?: number | null
+          currency?: string
+          targeting?: Json | null
+          optimization_goal?: string | null
+          created_at?: string
+          updated_at?: string
+          deleted_at?: string | null
+        }
+        Update: {
+          id?: string
+          workspace_id?: string
+          campaign_id?: string
+          integration_id?: string | null
+          external_id?: string | null
+          name?: string
+          status?: Database["public"]["Enums"]["campaign_status"]
+          budget?: number | null
+          currency?: string
+          targeting?: Json | null
+          optimization_goal?: string | null
+          created_at?: string
+          updated_at?: string
+          deleted_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ad_sets_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ad_sets_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      creatives: {
+        Row: {
+          id: string
+          workspace_id: string
+          integration_id: string | null
+          external_id: string | null
+          name: string | null
+          type: Database["public"]["Enums"]["creative_type"]
+          url: string | null
+          thumbnail_url: string | null
+          headline: string | null
+          body_text: string | null
+          call_to_action: string | null
+          metadata: Json | null
+          created_at: string
+          updated_at: string
+          deleted_at: string | null
+        }
+        Insert: {
+          id?: string
+          workspace_id: string
+          integration_id?: string | null
+          external_id?: string | null
+          name?: string | null
+          type?: Database["public"]["Enums"]["creative_type"]
+          url?: string | null
+          thumbnail_url?: string | null
+          headline?: string | null
+          body_text?: string | null
+          call_to_action?: string | null
+          metadata?: Json | null
+          created_at?: string
+          updated_at?: string
+          deleted_at?: string | null
+        }
+        Update: {
+          id?: string
+          workspace_id?: string
+          integration_id?: string | null
+          external_id?: string | null
+          name?: string | null
+          type?: Database["public"]["Enums"]["creative_type"]
+          url?: string | null
+          thumbnail_url?: string | null
+          headline?: string | null
+          body_text?: string | null
+          call_to_action?: string | null
+          metadata?: Json | null
+          created_at?: string
+          updated_at?: string
+          deleted_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "creatives_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ads: {
+        Row: {
+          id: string
+          workspace_id: string
+          campaign_id: string
+          ad_set_id: string
+          creative_id: string | null
+          integration_id: string | null
+          external_id: string | null
+          name: string
+          status: Database["public"]["Enums"]["campaign_status"]
+          preview_url: string | null
+          metadata: Json | null
+          created_at: string
+          updated_at: string
+          deleted_at: string | null
+        }
+        Insert: {
+          id?: string
+          workspace_id: string
+          campaign_id: string
+          ad_set_id: string
+          creative_id?: string | null
+          integration_id?: string | null
+          external_id?: string | null
+          name: string
+          status?: Database["public"]["Enums"]["campaign_status"]
+          preview_url?: string | null
+          metadata?: Json | null
+          created_at?: string
+          updated_at?: string
+          deleted_at?: string | null
+        }
+        Update: {
+          id?: string
+          workspace_id?: string
+          campaign_id?: string
+          ad_set_id?: string
+          creative_id?: string | null
+          integration_id?: string | null
+          external_id?: string | null
+          name?: string
+          status?: Database["public"]["Enums"]["campaign_status"]
+          preview_url?: string | null
+          metadata?: Json | null
+          created_at?: string
+          updated_at?: string
+          deleted_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ads_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ads_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ads_ad_set_id_fkey"
+            columns: ["ad_set_id"]
+            isOneToOne: false
+            referencedRelation: "ad_sets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ads_creative_id_fkey"
+            columns: ["creative_id"]
+            isOneToOne: false
+            referencedRelation: "creatives"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ad_metrics_daily: {
+        Row: {
+          id: string
+          workspace_id: string
+          integration_id: string | null
+          campaign_id: string
+          ad_set_id: string
+          ad_id: string
+          date: string
+          platform: string
+          impressions: number
+          clicks: number
+          spend: number
+          spend_base_currency: number
+          currency: string
+          exchange_rate: number
+          conversions: number
+          purchases: number
+          revenue: number
+          revenue_base_currency: number
+          reach: number | null
+          frequency: number | null
+          synced_at: string
+        }
+        Insert: {
+          id?: string
+          workspace_id: string
+          integration_id?: string | null
+          campaign_id: string
+          ad_set_id: string
+          ad_id: string
+          date: string
+          platform: string
+          impressions?: number
+          clicks?: number
+          spend?: number
+          spend_base_currency?: number
+          currency?: string
+          exchange_rate?: number
+          conversions?: number
+          purchases?: number
+          revenue?: number
+          revenue_base_currency?: number
+          reach?: number | null
+          frequency?: number | null
+          synced_at?: string
+        }
+        Update: {
+          id?: string
+          workspace_id?: string
+          integration_id?: string | null
+          campaign_id?: string
+          ad_set_id?: string
+          ad_id?: string
+          date?: string
+          platform?: string
+          impressions?: number
+          clicks?: number
+          spend?: number
+          spend_base_currency?: number
+          currency?: string
+          exchange_rate?: number
+          conversions?: number
+          purchases?: number
+          revenue?: number
+          revenue_base_currency?: number
+          reach?: number | null
+          frequency?: number | null
+          synced_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ad_metrics_daily_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ad_metrics_daily_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ad_metrics_daily_ad_set_id_fkey"
+            columns: ["ad_set_id"]
+            isOneToOne: false
+            referencedRelation: "ad_sets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ad_metrics_daily_ad_id_fkey"
+            columns: ["ad_id"]
+            isOneToOne: false
+            referencedRelation: "ads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      // ---------- VENDAS, PRODUTOS E CLIENTES ----------
+      products: {
+        Row: {
+          id: string
+          workspace_id: string
+          integration_id: string | null
+          external_id: string | null
+          title: string
+          sku: string | null
+          description: string | null
+          price: number
+          cost_price: number
+          currency: string
+          status: Database["public"]["Enums"]["product_status"]
+          type: Database["public"]["Enums"]["product_type"]
+          url: string | null
+          metadata: Json | null
+          created_at: string
+          updated_at: string
+          deleted_at: string | null
+        }
+        Insert: {
+          id?: string
+          workspace_id: string
+          integration_id?: string | null
+          external_id?: string | null
+          title: string
+          sku?: string | null
+          description?: string | null
+          price?: number
+          cost_price?: number
+          currency?: string
+          status?: Database["public"]["Enums"]["product_status"]
+          type?: Database["public"]["Enums"]["product_type"]
+          url?: string | null
+          metadata?: Json | null
+          created_at?: string
+          updated_at?: string
+          deleted_at?: string | null
+        }
+        Update: {
+          id?: string
+          workspace_id?: string
+          integration_id?: string | null
+          external_id?: string | null
+          title?: string
+          sku?: string | null
+          description?: string | null
+          price?: number
+          cost_price?: number
+          currency?: string
+          status?: Database["public"]["Enums"]["product_status"]
+          type?: Database["public"]["Enums"]["product_type"]
+          url?: string | null
+          metadata?: Json | null
+          created_at?: string
+          updated_at?: string
+          deleted_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "products_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      customers: {
+        Row: {
+          id: string
+          workspace_id: string
+          integration_id: string | null
+          external_id: string | null
+          email: string | null
+          phone: string | null
+          first_name: string | null
+          last_name: string | null
+          document: string | null
+          city: string | null
+          state: string | null
+          country: string
+          total_orders: number
+          total_spent: number
+          currency: string
+          first_order_at: string | null
+          last_order_at: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          workspace_id: string
+          integration_id?: string | null
+          external_id?: string | null
+          email?: string | null
+          phone?: string | null
+          first_name?: string | null
+          last_name?: string | null
+          document?: string | null
+          city?: string | null
+          state?: string | null
+          country?: string
+          total_orders?: number
+          total_spent?: number
+          currency?: string
+          first_order_at?: string | null
+          last_order_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          workspace_id?: string
+          integration_id?: string | null
+          external_id?: string | null
+          email?: string | null
+          phone?: string | null
+          first_name?: string | null
+          last_name?: string | null
+          document?: string | null
+          city?: string | null
+          state?: string | null
+          country?: string
+          total_orders?: number
+          total_spent?: number
+          currency?: string
+          first_order_at?: string | null
+          last_order_at?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "customers_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      orders: {
+        Row: {
+          id: string
+          workspace_id: string
+          customer_id: string | null
+          integration_id: string | null
+          external_id: string | null
+          order_number: string | null
+          status: Database["public"]["Enums"]["order_status"]
+          financial_status: string | null
+          fulfillment_status: string | null
+          total_amount: number
+          subtotal_amount: number
+          tax_amount: number
+          discount_amount: number
+          shipping_amount: number
+          currency: string
+          total_base_currency: number
+          exchange_rate: number
+          exchange_rate_at: string | null
+          payment_method: string | null
+          payment_gateway: string | null
+          utm_source: string | null
+          utm_medium: string | null
+          utm_campaign: string | null
+          utm_content: string | null
+          utm_term: string | null
+          session_id: string | null
+          ordered_at: string
+          synced_at: string | null
+          metadata: Json | null
+          created_at: string
+          updated_at: string
+          deleted_at: string | null
+        }
+        Insert: {
+          id?: string
+          workspace_id: string
+          customer_id?: string | null
+          integration_id?: string | null
+          external_id?: string | null
+          order_number?: string | null
+          status?: Database["public"]["Enums"]["order_status"]
+          financial_status?: string | null
+          fulfillment_status?: string | null
+          total_amount?: number
+          subtotal_amount?: number
+          tax_amount?: number
+          discount_amount?: number
+          shipping_amount?: number
+          currency?: string
+          total_base_currency?: number
+          exchange_rate?: number
+          exchange_rate_at?: string | null
+          payment_method?: string | null
+          payment_gateway?: string | null
+          utm_source?: string | null
+          utm_medium?: string | null
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_term?: string | null
+          session_id?: string | null
+          ordered_at?: string
+          synced_at?: string | null
+          metadata?: Json | null
+          created_at?: string
+          updated_at?: string
+          deleted_at?: string | null
+        }
+        Update: {
+          id?: string
+          workspace_id?: string
+          customer_id?: string | null
+          integration_id?: string | null
+          external_id?: string | null
+          order_number?: string | null
+          status?: Database["public"]["Enums"]["order_status"]
+          financial_status?: string | null
+          fulfillment_status?: string | null
+          total_amount?: number
+          subtotal_amount?: number
+          tax_amount?: number
+          discount_amount?: number
+          shipping_amount?: number
+          currency?: string
+          total_base_currency?: number
+          exchange_rate?: number
+          exchange_rate_at?: string | null
+          payment_method?: string | null
+          payment_gateway?: string | null
+          utm_source?: string | null
+          utm_medium?: string | null
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_term?: string | null
+          session_id?: string | null
+          ordered_at?: string
+          synced_at?: string | null
+          metadata?: Json | null
+          created_at?: string
+          updated_at?: string
+          deleted_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orders_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "orders_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      order_items: {
+        Row: {
+          id: string
+          workspace_id: string
+          order_id: string
+          product_id: string | null
+          external_id: string | null
+          sku: string | null
+          title: string
+          quantity: number
+          unit_price: number
+          total_price: number
+          unit_cost: number
+          total_cost: number
+          currency: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          workspace_id: string
+          order_id: string
+          product_id?: string | null
+          external_id?: string | null
+          sku?: string | null
+          title: string
+          quantity?: number
+          unit_price?: number
+          total_price?: number
+          unit_cost?: number
+          total_cost?: number
+          currency?: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          workspace_id?: string
+          order_id?: string
+          product_id?: string | null
+          external_id?: string | null
+          sku?: string | null
+          title?: string
+          quantity?: number
+          unit_price?: number
+          total_price?: number
+          unit_cost?: number
+          total_cost?: number
+          currency?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "order_items_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_items_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "order_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      // ---------- FINANCEIRO ----------
+      product_costs: {
+        Row: {
+          id: string
+          workspace_id: string
+          product_id: string
+          cost_amount: number
+          currency: string
+          cost_type: string
+          valid_from: string
+          valid_to: string | null
+          notes: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          workspace_id: string
+          product_id: string
+          cost_amount: number
+          currency?: string
+          cost_type?: string
+          valid_from?: string
+          valid_to?: string | null
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          workspace_id?: string
+          product_id?: string
+          cost_amount?: number
+          currency?: string
+          cost_type?: string
+          valid_from?: string
+          valid_to?: string | null
+          notes?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "product_costs_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "product_costs_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      gateway_fees: {
+        Row: {
+          id: string
+          workspace_id: string
+          gateway: string
+          payment_method: string
+          fee_percentage: number
+          fixed_fee: number
+          currency: string
+          active: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          workspace_id: string
+          gateway: string
+          payment_method?: string
+          fee_percentage?: number
+          fixed_fee?: number
+          currency?: string
+          active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          workspace_id?: string
+          gateway?: string
+          payment_method?: string
+          fee_percentage?: number
+          fixed_fee?: number
+          currency?: string
+          active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "gateway_fees_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      taxes: {
+        Row: {
+          id: string
+          workspace_id: string
+          name: string
+          rate_percentage: number
+          applies_to: string
+          active: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          workspace_id: string
+          name: string
+          rate_percentage?: number
+          applies_to?: string
+          active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          workspace_id?: string
+          name?: string
+          rate_percentage?: number
+          applies_to?: string
+          active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "taxes_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fixed_costs: {
+        Row: {
+          id: string
+          workspace_id: string
+          name: string
+          category: string
+          amount: number
+          currency: string
+          periodicity: string
+          start_date: string
+          end_date: string | null
+          active: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          workspace_id: string
+          name: string
+          category?: string
+          amount: number
+          currency?: string
+          periodicity?: string
+          start_date: string
+          end_date?: string | null
+          active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          workspace_id?: string
+          name?: string
+          category?: string
+          amount?: number
+          currency?: string
+          periodicity?: string
+          start_date?: string
+          end_date?: string | null
+          active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fixed_costs_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      financial_entries: {
+        Row: {
+          id: string
+          workspace_id: string
+          type: Database["public"]["Enums"]["financial_entry_type"]
+          category: string
+          amount: number
+          amount_base_currency: number
+          currency: string
+          exchange_rate: number
+          description: string
+          reference_type: string | null
+          reference_id: string | null
+          entry_date: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          workspace_id: string
+          type: Database["public"]["Enums"]["financial_entry_type"]
+          category: string
+          amount: number
+          amount_base_currency: number
+          currency?: string
+          exchange_rate?: number
+          description: string
+          reference_type?: string | null
+          reference_id?: string | null
+          entry_date?: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          workspace_id?: string
+          type?: Database["public"]["Enums"]["financial_entry_type"]
+          category?: string
+          amount?: number
+          amount_base_currency?: number
+          currency?: string
+          exchange_rate?: number
+          description?: string
+          reference_type?: string | null
+          reference_id?: string | null
+          entry_date?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "financial_entries_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      // ---------- TRACKING ----------
+      utm_links: {
+        Row: {
+          id: string
+          workspace_id: string
+          name: string
+          destination_url: string
+          utm_source: string
+          utm_medium: string
+          utm_campaign: string
+          utm_content: string | null
+          utm_term: string | null
+          short_code: string | null
+          custom_params: Json | null
+          click_count: number
+          is_active: boolean
+          created_by: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          workspace_id: string
+          name: string
+          destination_url: string
+          utm_source: string
+          utm_medium: string
+          utm_campaign: string
+          utm_content?: string | null
+          utm_term?: string | null
+          short_code?: string | null
+          custom_params?: Json | null
+          click_count?: number
+          is_active?: boolean
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          workspace_id?: string
+          name?: string
+          destination_url?: string
+          utm_source?: string
+          utm_medium?: string
+          utm_campaign?: string
+          utm_content?: string | null
+          utm_term?: string | null
+          short_code?: string | null
+          custom_params?: Json | null
+          click_count?: number
+          is_active?: boolean
+          created_by?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "utm_links_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tracking_sessions: {
+        Row: {
+          id: string
+          workspace_id: string
+          session_token: string
+          visitor_id: string
+          landing_page: string
+          referrer: string | null
+          utm_source: string | null
+          utm_medium: string | null
+          utm_campaign: string | null
+          utm_content: string | null
+          utm_term: string | null
+          device_type: string | null
+          os: string | null
+          browser: string | null
+          country: string | null
+          city: string | null
+          started_at: string
+          last_seen_at: string
+        }
+        Insert: {
+          id?: string
+          workspace_id: string
+          session_token: string
+          visitor_id: string
+          landing_page: string
+          referrer?: string | null
+          utm_source?: string | null
+          utm_medium?: string | null
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_term?: string | null
+          device_type?: string | null
+          os?: string | null
+          browser?: string | null
+          country?: string | null
+          city?: string | null
+          started_at?: string
+          last_seen_at?: string
+        }
+        Update: {
+          id?: string
+          workspace_id?: string
+          session_token?: string
+          visitor_id?: string
+          landing_page?: string
+          referrer?: string | null
+          utm_source?: string | null
+          utm_medium?: string | null
+          utm_campaign?: string | null
+          utm_content?: string | null
+          utm_term?: string | null
+          device_type?: string | null
+          os?: string | null
+          browser?: string | null
+          country?: string | null
+          city?: string | null
+          started_at?: string
+          last_seen_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tracking_sessions_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tracking_events: {
+        Row: {
+          id: string
+          workspace_id: string
+          session_id: string | null
+          visitor_id: string
+          event_name: string
+          page_url: string
+          page_title: string | null
+          properties: Json | null
+          occurred_at: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          workspace_id: string
+          session_id?: string | null
+          visitor_id: string
+          event_name: string
+          page_url: string
+          page_title?: string | null
+          properties?: Json | null
+          occurred_at?: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          workspace_id?: string
+          session_id?: string | null
+          visitor_id?: string
+          event_name?: string
+          page_url?: string
+          page_title?: string | null
+          properties?: Json | null
+          occurred_at?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tracking_events_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tracking_events_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "tracking_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      attributions: {
+        Row: {
+          id: string
+          workspace_id: string
+          order_id: string
+          session_id: string | null
+          customer_id: string | null
+          campaign_id: string | null
+          ad_id: string | null
+          model: Database["public"]["Enums"]["attribution_model"]
+          attributed_revenue: number
+          attributed_weight: number
+          touchpoint_at: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          workspace_id: string
+          order_id: string
+          session_id?: string | null
+          customer_id?: string | null
+          campaign_id?: string | null
+          ad_id?: string | null
+          model?: Database["public"]["Enums"]["attribution_model"]
+          attributed_revenue?: number
+          attributed_weight?: number
+          touchpoint_at?: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          workspace_id?: string
+          order_id?: string
+          session_id?: string | null
+          customer_id?: string | null
+          campaign_id?: string | null
+          ad_id?: string | null
+          model?: Database["public"]["Enums"]["attribution_model"]
+          attributed_revenue?: number
+          attributed_weight?: number
+          touchpoint_at?: string
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "attributions_workspace_id_fkey"
+            columns: ["workspace_id"]
+            isOneToOne: false
+            referencedRelation: "workspaces"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attributions_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attributions_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attributions_ad_id_fkey"
+            columns: ["ad_id"]
+            isOneToOne: false
+            referencedRelation: "ads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
       has_workspace_permission: {
-        Args: { _permission: string; _user_id: string; _workspace_id: string }
+        Args: {
+          _permission: string
+          _user_id: string
+          _workspace_id: string
+        }
         Returns: boolean
       }
       is_workspace_member: {
-        Args: { _user_id: string; _workspace_id: string }
+        Args: {
+          _user_id: string
+          _workspace_id: string
+        }
         Returns: boolean
       }
       shares_workspace: {
-        Args: { _user_a: string; _user_b: string }
+        Args: {
+          _user_a: string
+          _user_b: string
+        }
         Returns: boolean
       }
       workspace_role: {
-        Args: { _user_id: string; _workspace_id: string }
+        Args: {
+          _user_id: string
+          _workspace_id: string
+        }
         Returns: Database["public"]["Enums"]["app_role"]
       }
     }
@@ -342,6 +1591,20 @@ export type Database = {
         | "paused"
         | "data_delayed"
       workspace_status: "trial" | "active" | "read_only" | "suspended"
+      campaign_status: "active" | "paused" | "archived" | "draft"
+      order_status: "pending" | "paid" | "canceled" | "refunded" | "failed"
+      product_status: "active" | "draft" | "archived"
+      product_type: "physical" | "digital" | "service" | "subscription"
+      creative_type: "image" | "video" | "carousel" | "text"
+      financial_entry_type:
+        | "income"
+        | "expense"
+        | "fee"
+        | "tax"
+        | "cost_of_goods"
+        | "ad_spend"
+        | "adjustment"
+      attribution_model: "first_click" | "last_click" | "linear" | "data_driven"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -351,31 +1614,31 @@ export type Database = {
 
 type DatabaseWithoutInternals = Omit<Database, "__InternalSupabase">
 
-type DefaultSchema = DatabaseWithoutInternals[Extract<keyof Database, "public">]
+type DefaultSchema = DatabaseWithoutInternals[keyof DatabaseWithoutInternals]
 
 export type Tables<
-  DefaultSchemaTableNameOrOptions extends
+  PublicTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends PublicTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-    ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-        DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
+    ? keyof (DatabaseWithoutInternals[PublicTableNameOrOptions["schema"]]["Tables"] &
+        DatabaseWithoutInternals[PublicTableNameOrOptions["schema"]]["Views"])
     : never = never,
-> = DefaultSchemaTableNameOrOptions extends {
+> = PublicTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
-  ? (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
-      DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])[TableName] extends {
+  ? (DatabaseWithoutInternals[PublicTableNameOrOptions["schema"]]["Tables"] &
+      DatabaseWithoutInternals[PublicTableNameOrOptions["schema"]]["Views"])[TableName] extends {
       Row: infer R
     }
     ? R
     : never
-  : DefaultSchemaTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
+  : PublicTableNameOrOptions extends keyof (DefaultSchema["Tables"] &
         DefaultSchema["Views"])
     ? (DefaultSchema["Tables"] &
-        DefaultSchema["Views"])[DefaultSchemaTableNameOrOptions] extends {
+        DefaultSchema["Views"])[PublicTableNameOrOptions] extends {
         Row: infer R
       }
       ? R
@@ -383,24 +1646,24 @@ export type Tables<
     : never
 
 export type TablesInsert<
-  DefaultSchemaTableNameOrOptions extends
+  PublicTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends PublicTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    ? keyof DatabaseWithoutInternals[PublicTableNameOrOptions["schema"]]["Tables"]
     : never = never,
-> = DefaultSchemaTableNameOrOptions extends {
+> = PublicTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
-  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+  ? DatabaseWithoutInternals[PublicTableNameOrOptions["schema"]]["Tables"][TableName] extends {
       Insert: infer I
     }
     ? I
     : never
-  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
-    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+  : PublicTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][PublicTableNameOrOptions] extends {
         Insert: infer I
       }
       ? I
@@ -408,24 +1671,24 @@ export type TablesInsert<
     : never
 
 export type TablesUpdate<
-  DefaultSchemaTableNameOrOptions extends
+  PublicTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends PublicTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-    ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
+    ? keyof DatabaseWithoutInternals[PublicTableNameOrOptions["schema"]]["Tables"]
     : never = never,
-> = DefaultSchemaTableNameOrOptions extends {
+> = PublicTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
-  ? DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"][TableName] extends {
+  ? DatabaseWithoutInternals[PublicTableNameOrOptions["schema"]]["Tables"][TableName] extends {
       Update: infer U
     }
     ? U
     : never
-  : DefaultSchemaTableNameOrOptions extends keyof DefaultSchema["Tables"]
-    ? DefaultSchema["Tables"][DefaultSchemaTableNameOrOptions] extends {
+  : PublicTableNameOrOptions extends keyof DefaultSchema["Tables"]
+    ? DefaultSchema["Tables"][PublicTableNameOrOptions] extends {
         Update: infer U
       }
       ? U
@@ -433,20 +1696,20 @@ export type TablesUpdate<
     : never
 
 export type Enums<
-  DefaultSchemaEnumNameOrOptions extends
+  PublicEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends PublicEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
-    ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
+    ? keyof DatabaseWithoutInternals[PublicEnumNameOrOptions["schema"]]["Enums"]
     : never = never,
-> = DefaultSchemaEnumNameOrOptions extends {
+> = PublicEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
-  ? DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"][EnumName]
-  : DefaultSchemaEnumNameOrOptions extends keyof DefaultSchema["Enums"]
-    ? DefaultSchema["Enums"][DefaultSchemaEnumNameOrOptions]
+  ? DatabaseWithoutInternals[PublicEnumNameOrOptions["schema"]]["Enums"][EnumName]
+  : PublicEnumNameOrOptions extends keyof DefaultSchema["Enums"]
+    ? DefaultSchema["Enums"][PublicEnumNameOrOptions]
     : never
 
 export type CompositeTypes<
@@ -499,6 +1762,21 @@ export const Constants = {
         "data_delayed",
       ],
       workspace_status: ["trial", "active", "read_only", "suspended"],
+      campaign_status: ["active", "paused", "archived", "draft"],
+      order_status: ["pending", "paid", "canceled", "refunded", "failed"],
+      product_status: ["active", "draft", "archived"],
+      product_type: ["physical", "digital", "service", "subscription"],
+      creative_type: ["image", "video", "carousel", "text"],
+      financial_entry_type: [
+        "income",
+        "expense",
+        "fee",
+        "tax",
+        "cost_of_goods",
+        "ad_spend",
+        "adjustment",
+      ],
+      attribution_model: ["first_click", "last_click", "linear", "data_driven"],
     },
   },
 } as const

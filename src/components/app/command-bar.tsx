@@ -12,9 +12,7 @@ export interface CommandItem {
 
 /**
  * Command Bar (Cmd/Ctrl+K).
- *
- * Navegação por teclado é o caminho primário do operador; o mouse é o atalho
- * secundário. Por isso o componente é controlado apenas por estado local.
+ * Navegação e comandos rápidos no Costfy.
  */
 export function CommandBar({
   open,
@@ -29,11 +27,21 @@ export function CommandBar({
 
   const items = useMemo<CommandItem[]>(
     () => [
-      { id: "dashboard", label: "Ir para Visão geral", hint: "Painel", run: () => void navigate({ to: "/dashboard" }) },
-      { id: "integrations", label: "Ir para Integrações", hint: "Dados", run: () => void navigate({ to: "/integrations" }) },
-      { id: "settings", label: "Ir para Configurações", hint: "Workspace", run: () => void navigate({ to: "/settings" }) },
+      { id: "dashboard", label: "Ir para Visão geral", hint: "Principal", run: () => void navigate({ to: "/dashboard" }) },
+      { id: "analytics", label: "Ir para Analytics", hint: "Principal", run: () => void navigate({ to: "/analytics" }) },
+      { id: "marketing", label: "Ir para Marketing & Campanhas", hint: "Operação", run: () => void navigate({ to: "/marketing" }) },
+      { id: "sales", label: "Ir para Vendas & Produtos", hint: "Operação", run: () => void navigate({ to: "/sales" }) },
+      { id: "finance", label: "Ir para Financeiro & DRE", hint: "Operação", run: () => void navigate({ to: "/finance" }) },
+      { id: "tracking", label: "Ir para Tracking & UTMs", hint: "Operação", run: () => void navigate({ to: "/tracking" }) },
+      { id: "brain", label: "Ir para Costfy Brain Hub", hint: "Inteligência", run: () => void navigate({ to: "/brain" }) },
+      { id: "automations", label: "Ir para Automações", hint: "Inteligência", run: () => void navigate({ to: "/automations" }) },
+      { id: "reports", label: "Ir para Relatórios", hint: "Inteligência", run: () => void navigate({ to: "/reports" }) },
+      { id: "integrations", label: "Ir para Integrações", hint: "Sistema", run: () => void navigate({ to: "/integrations" }) },
+      { id: "team", label: "Ir para Time e permissões", hint: "Sistema", run: () => void navigate({ to: "/team" }) },
+      { id: "audit", label: "Ir para Registro de Auditoria", hint: "Sistema", run: () => void navigate({ to: "/audit" }) },
+      { id: "settings", label: "Ir para Configurações", hint: "Sistema", run: () => void navigate({ to: "/settings" }) },
       { id: "onboarding", label: "Criar novo workspace", hint: "Ação", run: () => void navigate({ to: "/onboarding" }) },
-      { id: "site", label: "Ver site público", hint: "Marketing", run: () => void navigate({ to: "/" }) },
+      { id: "site", label: "Ver site público", hint: "Início", run: () => void navigate({ to: "/" }) },
     ],
     [navigate],
   );
@@ -41,7 +49,12 @@ export function CommandBar({
   const filtered = useMemo(() => {
     const term = query.trim().toLowerCase();
     if (!term) return items;
-    return items.filter((item) => item.label.toLowerCase().includes(term));
+    return items.filter(
+      (item) =>
+        item.label.toLowerCase().includes(term) ||
+        item.hint.toLowerCase().includes(term) ||
+        item.id.includes(term),
+    );
   }, [items, query]);
 
   useEffect(() => {
@@ -95,7 +108,7 @@ export function CommandBar({
           placeholder="Buscar comandos, telas e ações…"
           className="h-12 w-full border-b border-border bg-transparent px-4 text-[14px] text-foreground placeholder:text-subtle-foreground focus:outline-none"
         />
-        <ul className="max-h-72 overflow-y-auto p-1.5">
+        <ul className="max-h-80 overflow-y-auto p-1.5">
           {filtered.length === 0 && (
             <li className="px-3 py-6 text-center text-[13px] text-muted-foreground">
               Nenhum comando encontrado.
