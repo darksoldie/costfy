@@ -305,6 +305,10 @@ export type Database = {
         Args: { _user_id: string; _workspace_id: string }
         Returns: boolean
       }
+      shares_workspace: {
+        Args: { _user_a: string; _user_b: string }
+        Returns: boolean
+      }
       workspace_role: {
         Args: { _user_id: string; _workspace_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
