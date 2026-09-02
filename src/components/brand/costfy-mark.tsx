@@ -1,19 +1,20 @@
 import { cn } from "@/lib/utils";
 
 /**
- * Marca visual do Costfy Brain.
+ * Símbolo oficial do Costfy.
  *
- * Representação: um núcleo com nós conectados — inteligência, conexão, dados,
- * sistema. Deliberadamente NÃO é um cérebro literal.
+ * Construção (grid 24×24):
+ * - Arco em "C" aberto à direita — o sistema que envolve a operação.
+ * - Núcleo sólido no centro — o dado compreendido (Brain).
+ * - Nó menor na abertura do arco — a ação que sai do sistema.
  *
- * `state` comunica o estado operacional do Brain e é usado por
- * BrainThinking / BrainStatus. A animação existe para comunicar estado,
- * nunca para decorar.
+ * O símbolo é geométrico e desenhado a partir de um único centro óptico.
+ * Não deve ser redesenhado, distorcido ou recolorido fora dos tokens.
  */
 export interface CostfyMarkProps extends React.SVGProps<SVGSVGElement> {
   /** Tamanho em pixels (quadrado). */
   size?: number;
-  /** Estado operacional do Brain. */
+  /** Estado operacional do Brain — a animação existe para comunicar estado. */
   state?: "idle" | "thinking" | "muted";
 }
 
@@ -36,50 +37,55 @@ export function CostfyMark({
       className={cn(state === "muted" && "opacity-60", className)}
       {...props}
     >
-      {/* Conexões: hierarquia de dados convergindo para o núcleo */}
-      <g stroke="currentColor" strokeWidth="1.25" strokeLinecap="round" opacity="0.55">
-        <path d="M12 12 L12 3.6" />
-        <path d="M12 12 L19.3 7.8" />
-        <path d="M12 12 L19.3 16.2" />
-        <path d="M12 12 L12 20.4" />
-        <path d="M12 12 L4.7 16.2" />
-        <path d="M12 12 L4.7 7.8" />
-      </g>
-      {/* Nós */}
-      <g fill="currentColor">
-        <circle cx="12" cy="3.6" r="1.5" />
-        <circle cx="19.3" cy="7.8" r="1.5" />
-        <circle cx="19.3" cy="16.2" r="1.5" />
-        <circle cx="12" cy="20.4" r="1.5" />
-        <circle cx="4.7" cy="16.2" r="1.5" />
-        <circle cx="4.7" cy="7.8" r="1.5" />
-      </g>
+      {/* Arco em C — abertura à direita */}
+      <path
+        d="M17.63 6.05 A7.6 7.6 0 1 0 17.63 17.95"
+        stroke="currentColor"
+        strokeWidth="3.6"
+        strokeLinecap="round"
+        fill="none"
+      />
       {/* Núcleo */}
       <circle
-        cx="12"
+        cx="11.1"
         cy="12"
-        r="3.4"
+        r="2.75"
         fill="currentColor"
         className={thinking ? "animate-core" : undefined}
-        style={{ transformOrigin: "12px 12px" }}
+        style={{ transformOrigin: "11.1px 12px" }}
       />
+      {/* Nó de saída */}
+      <circle cx="19.6" cy="12" r="1.75" fill="currentColor" />
     </svg>
   );
 }
 
-/** Lockup completo: marca + wordmark. */
+export interface CostfyLogoProps {
+  className?: string;
+  /** Tamanho do símbolo em pixels. */
+  markSize?: number;
+  /** Exibe a assinatura oficial abaixo do wordmark. */
+  withTagline?: boolean;
+}
+
+/** Lockup horizontal oficial: símbolo + wordmark (+ assinatura opcional). */
 export function CostfyLogo({
   className,
   markSize = 22,
-}: {
-  className?: string;
-  markSize?: number;
-}) {
+  withTagline = false,
+}: CostfyLogoProps) {
   return (
-    <span className={cn("inline-flex items-center gap-2", className)}>
+    <span className={cn("inline-flex items-center gap-2.5", className)}>
       <CostfyMark size={markSize} className="text-primary" />
-      <span className="text-[15px] font-semibold tracking-[-0.03em] text-foreground">
-        Costfy
+      <span className="flex flex-col leading-none">
+        <span className="text-[16px] font-semibold tracking-[-0.035em] text-foreground">
+          Costfy
+        </span>
+        {withTagline && (
+          <span className="mt-1 text-[9px] font-medium uppercase tracking-[0.22em] text-subtle-foreground">
+            Your business. Understood.
+          </span>
+        )}
       </span>
     </span>
   );
