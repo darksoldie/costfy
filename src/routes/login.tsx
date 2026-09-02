@@ -53,7 +53,7 @@ function LoginPage() {
         );
         return;
       }
-      await navigate({ to: "/", replace: true });
+      await navigate({ to: "/dashboard", replace: true });
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "Não foi possível entrar.");
     } finally {
@@ -73,7 +73,7 @@ function LoginPage() {
       setError(result.error.message);
       return;
     }
-    await navigate({ to: "/", replace: true });
+    await navigate({ to: "/dashboard", replace: true });
   }
 
   return (

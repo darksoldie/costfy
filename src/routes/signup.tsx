@@ -63,7 +63,7 @@ function SignupPage() {
       }
       // Com confirmação de e-mail ativa, não há sessão até o link ser clicado.
       if (data.session) {
-        await navigate({ to: "/", replace: true });
+        await navigate({ to: "/dashboard", replace: true });
         return;
       }
       setConfirmationSent(true);
@@ -86,7 +86,7 @@ function SignupPage() {
       setError(result.error.message);
       return;
     }
-    await navigate({ to: "/", replace: true });
+    await navigate({ to: "/dashboard", replace: true });
   }
 
   if (confirmationSent) {
