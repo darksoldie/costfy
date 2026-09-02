@@ -131,13 +131,24 @@ export function SiteHeader() {
               {item.label}
             </Link>
           ))}
-          <Link
-            to="/login"
-            onClick={() => setOpen(false)}
-            className="rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-secondary hover:text-foreground"
-          >
-            Entrar
-          </Link>
+          {ready && session ? (
+            <button
+              type="button"
+              onClick={handleSignOut}
+              className="rounded-md px-3 py-2 text-left text-sm text-muted-foreground hover:bg-secondary hover:text-foreground"
+            >
+              Sair
+            </button>
+          ) : (
+            <Link
+              to="/login"
+              onClick={() => setOpen(false)}
+              className="rounded-md px-3 py-2 text-sm text-muted-foreground hover:bg-secondary hover:text-foreground"
+            >
+              Entrar
+            </Link>
+          )}
+
         </nav>
       </div>
     </header>
