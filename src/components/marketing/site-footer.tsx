@@ -28,8 +28,7 @@ export function SiteFooter() {
         <div className="lg:col-span-2">
           <CostfyLogo />
           <p className="type-body-sm mt-3 max-w-xs text-muted-foreground">
-            Sistema operacional inteligente para negócios digitais. Seu negócio,
-            compreendido.
+            Sistema operacional inteligente para negócios digitais. Seu negócio, compreendido.
           </p>
         </div>
         {COLUMNS.map((col) => (

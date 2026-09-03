@@ -76,9 +76,7 @@ function SolutionsPage() {
           {SOLUTIONS.map((s) => (
             <article key={s.name} className="bg-background p-6">
               <h2 className="type-h3 text-foreground">{s.name}</h2>
-              <p className="mt-3 text-[14px] font-medium leading-snug text-primary">
-                {s.question}
-              </p>
+              <p className="mt-3 text-[14px] font-medium leading-snug text-primary">{s.question}</p>
               <p className="type-body-sm mt-2 text-muted-foreground">{s.text}</p>
             </article>
           ))}

@@ -22,20 +22,13 @@ export interface PageIntroProps {
 }
 
 /** Abertura padrão de página interna: eyebrow, título e um parágrafo. */
-export function PageIntro({
-  eyebrow,
-  title,
-  description,
-  children,
-}: PageIntroProps) {
+export function PageIntro({ eyebrow, title, description, children }: PageIntroProps) {
   return (
     <section className="border-b border-border">
       <div className="mx-auto max-w-6xl px-5 py-16 md:py-20">
         <p className="type-caption text-primary">{eyebrow}</p>
         <h1 className="type-h1 mt-3 max-w-3xl text-foreground">{title}</h1>
-        <p className="type-body mt-4 max-w-2xl text-muted-foreground">
-          {description}
-        </p>
+        <p className="type-body mt-4 max-w-2xl text-muted-foreground">{description}</p>
         {children && <div className="mt-7">{children}</div>}
       </div>
     </section>
@@ -57,9 +50,7 @@ export function Section({
       <div className="mx-auto max-w-6xl px-5 py-14 md:py-16">
         {title && <h2 className="type-h2 text-foreground">{title}</h2>}
         {description && (
-          <p className="type-body mt-3 max-w-2xl text-muted-foreground">
-            {description}
-          </p>
+          <p className="type-body mt-3 max-w-2xl text-muted-foreground">{description}</p>
         )}
         <div className={title || description ? "mt-8" : undefined}>{children}</div>
       </div>

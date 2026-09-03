@@ -16,8 +16,7 @@ export const Route = createFileRoute("/resources")({
       { property: "og:title", content: "Recursos — Costfy" },
       {
         property: "og:description",
-        content:
-          "Documentação prática para colocar sua operação dentro do Costfy com segurança.",
+        content: "Documentação prática para colocar sua operação dentro do Costfy com segurança.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },

@@ -24,7 +24,8 @@ export const Route = createFileRoute("/_authenticated/audit")({
       { title: "Registro de Auditoria — Costfy" },
       {
         name: "description",
-        content: "Trilha de auditoria imutável de todas as ações, acessos e alterações realizadas no workspace.",
+        content:
+          "Trilha de auditoria imutável de todas as ações, acessos e alterações realizadas no workspace.",
       },
     ],
   }),
@@ -45,8 +46,8 @@ interface AuditLogEntry {
   target_id: string | null;
   reason: string | null;
   result: "success" | "failed" | "denied";
-  old_value: any;
-  new_value: any;
+  old_value: unknown;
+  new_value: unknown;
 }
 
 function AuditPage() {
@@ -69,7 +70,20 @@ function AuditPage() {
         .limit(100);
 
       if (error) throw new Error(error.message);
-      return (data as any) ?? [];
+      if (!data) return [];
+      return data.map((row) => ({
+        id: row.id,
+        created_at: row.created_at,
+        actor_type: row.actor_type,
+        actor_user_id: row.actor_user_id,
+        action: row.action,
+        target_type: row.target_type,
+        target_id: row.target_id,
+        reason: row.reason,
+        result: row.result === "failed" || row.result === "denied" ? row.result : "success",
+        old_value: row.old_value,
+        new_value: row.new_value,
+      }));
     },
   });
 
@@ -127,7 +141,8 @@ function AuditPage() {
             <History className="mx-auto size-8 text-muted-foreground" />
             <h3 className="type-h3 mt-3 text-foreground">Nenhum registro de auditoria</h3>
             <p className="type-body-sm mx-auto mt-1 max-w-md text-muted-foreground">
-              Ações realizadas no workspace (alterações de campanha, custos, membros e permissões) serão registradas aqui em tempo real.
+              Ações realizadas no workspace (alterações de campanha, custos, membros e permissões)
+              serão registradas aqui em tempo real.
             </p>
           </div>
         ) : (

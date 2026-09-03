@@ -93,6 +93,15 @@ export interface CreateWorkspaceInput {
  *
  * O papel de owner é atribuído por trigger no banco — não há escrita de papel
  * a partir do cliente, o que evita escalonamento de privilégio.
+ *
+ * NOTA TÉCNICA: Não usamos `.insert().select()` (INSERT ... RETURNING) porque
+ * a cláusula RETURNING do PostgREST é avaliada ANTES do trigger AFTER INSERT
+ * `handle_new_workspace` inserir a linha em workspace_members. Como a policy
+ * SELECT de workspaces exige is_workspace_member(id, auth.uid()), o RETURNING
+ * falha com "violates row-level security policy". A solução canônica é a
+ * migration 20260902211200_fix_workspace_creation_rls.sql que adiciona uma
+ * policy SELECT complementar via created_by = auth.uid(). Este código também
+ * é resiliente ao separar INSERT e SELECT em dois passos.
  */
 export function useCreateWorkspace() {
   const queryClient = useQueryClient();
@@ -108,18 +117,33 @@ export function useCreateWorkspace() {
       const base = slugify(trimmed) || "workspace";
       const slug = `${base}-${Math.random().toString(36).slice(2, 7)}`;
 
-      const { data, error } = await supabase
+      // Passo 1: INSERT puro sem RETURNING (evita conflito de RLS SELECT + trigger AFTER INSERT)
+      const { error: insertError } = await supabase.from("workspaces").insert({
+        name: trimmed,
+        slug,
+        business_type: businessType,
+        created_by: userData.user.id,
+      });
+
+      if (insertError) throw new Error(insertError.message);
+
+      // Passo 2: SELECT separado — neste ponto o trigger AFTER INSERT já executou
+      // e a linha em workspace_members existe, satisfazendo a policy SELECT.
+      // Usamos slug como chave natural (UNIQUE) para localizar o workspace recém-criado.
+      const { data, error: selectError } = await supabase
         .from("workspaces")
-        .insert({
-          name: trimmed,
-          slug,
-          business_type: businessType,
-          created_by: userData.user.id,
-        })
         .select("*")
+        .eq("slug", slug)
+        .eq("created_by", userData.user.id)
         .single();
 
-      if (error) throw new Error(error.message);
+      if (selectError || !data) {
+        throw new Error(
+          selectError?.message ??
+            "Workspace criado, mas não localizado. Tente recarregar a página.",
+        );
+      }
+
       return data;
     },
     onSuccess: (workspace) => {

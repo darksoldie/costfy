@@ -90,17 +90,11 @@ function LoginPage() {
       }
     >
       <div className="space-y-5">
-        <GoogleButton
-          onClick={handleGoogle}
-          loading={googleLoading}
-          label="Continuar com Google"
-        />
+        <GoogleButton onClick={handleGoogle} loading={googleLoading} label="Continuar com Google" />
 
         <div className="flex items-center gap-3" aria-hidden>
           <span className="h-px flex-1 bg-border" />
-          <span className="text-[11px] uppercase tracking-wide text-subtle-foreground">
-            ou
-          </span>
+          <span className="text-[11px] uppercase tracking-wide text-subtle-foreground">ou</span>
           <span className="h-px flex-1 bg-border" />
         </div>
 

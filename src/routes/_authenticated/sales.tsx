@@ -19,6 +19,7 @@ import {
   ordersQuery,
   productsQuery,
   customersQuery,
+  trackingSessionsCountQuery,
   type Order,
   type Product,
   type Customer,
@@ -33,7 +34,8 @@ export const Route = createFileRoute("/_authenticated/sales")({
       { title: "Vendas, Produtos & Clientes — Costfy" },
       {
         name: "description",
-        content: "Acompanhe pedidos, produtos e clientes com ticket médio, LTV e status de pagamento.",
+        content:
+          "Acompanhe pedidos, produtos e clientes com ticket médio, LTV e status de pagamento.",
       },
     ],
   }),
@@ -51,7 +53,10 @@ function SalesPage() {
 
   const { data: orders = [], isLoading: loadingOrders } = useQuery(ordersQuery(workspaceId));
   const { data: products = [], isLoading: loadingProducts } = useQuery(productsQuery(workspaceId));
-  const { data: customers = [], isLoading: loadingCustomers } = useQuery(customersQuery(workspaceId));
+  const { data: customers = [], isLoading: loadingCustomers } = useQuery(
+    customersQuery(workspaceId),
+  );
+  const { data: totalSessions = 0 } = useQuery(trackingSessionsCountQuery(workspaceId));
 
   const [tab, setTab] = useState<"orders" | "products" | "customers">("orders");
   const [search, setSearch] = useState("");
@@ -105,7 +110,8 @@ function SalesPage() {
   const createOrder = useMutation({
     mutationFn: async () => {
       if (!workspaceId) throw new Error("Workspace não selecionado");
-      if (!orderAmount || parseFloat(orderAmount) <= 0) throw new Error("Informe o valor do pedido");
+      if (!orderAmount || parseFloat(orderAmount) <= 0)
+        throw new Error("Informe o valor do pedido");
 
       const amount = parseFloat(orderAmount);
       const { data, error } = await supabase
@@ -143,7 +149,7 @@ function SalesPage() {
     paidOrders: orders.filter((o) => o.status === "paid").length,
     totalCustomers: customers.length,
     grossRevenue: totalRevenue,
-    totalSessions: 100, // base para taxa
+    totalSessions,
   });
 
   return (
@@ -157,7 +163,9 @@ function SalesPage() {
           </Link>
           <button
             type="button"
-            onClick={() => (tab === "products" ? setProductModalOpen(true) : setOrderModalOpen(true))}
+            onClick={() =>
+              tab === "products" ? setProductModalOpen(true) : setOrderModalOpen(true)
+            }
             className={buttonClass("primary", "sm", "gap-1.5")}
           >
             <Plus className="size-3.5" />
@@ -167,56 +175,61 @@ function SalesPage() {
       }
     >
       <div className="space-y-6">
-        {/* KPI Summary Bar */}
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-5">
-          <div className="rounded-lg border border-border bg-card p-3.5">
-            <p className="type-caption text-muted-foreground">Receita Bruta</p>
-            <p className="type-numeric mt-1.5 text-xl font-semibold text-foreground">
-              {MetricsEngine.formatCurrency(totalRevenue, active?.workspace.base_currency)}
-            </p>
-            <p className="text-[11px] text-subtle-foreground mt-0.5">pedidos realizados</p>
-          </div>
-          <div className="rounded-lg border border-border bg-card p-3.5">
-            <p className="type-caption text-muted-foreground">Total de Pedidos</p>
-            <p className="type-numeric mt-1.5 text-xl font-semibold text-foreground">
-              {salesMetrics.totalOrders}
-            </p>
-            <p className="text-[11px] text-subtle-foreground mt-0.5">{salesMetrics.paidOrders} pagos</p>
-          </div>
-          <div className="rounded-lg border border-border bg-card p-3.5">
-            <p className="type-caption text-muted-foreground">Ticket Médio</p>
-            <p className="type-numeric mt-1.5 text-xl font-semibold text-foreground">
-              {MetricsEngine.formatCurrency(salesMetrics.averageTicket, active?.workspace.base_currency)}
-            </p>
-            <p className="text-[11px] text-subtle-foreground mt-0.5">por pedido pago</p>
-          </div>
-          <div className="rounded-lg border border-border bg-card p-3.5">
-            <p className="type-caption text-muted-foreground">Clientes Cadastrados</p>
-            <p className="type-numeric mt-1.5 text-xl font-semibold text-foreground">
-              {customers.length}
-            </p>
-            <p className="text-[11px] text-subtle-foreground mt-0.5">base única</p>
-          </div>
-          <div className="rounded-lg border border-border bg-card p-3.5">
-            <p className="type-caption text-muted-foreground">Produtos Cadastrados</p>
-            <p className="type-numeric mt-1.5 text-xl font-semibold text-foreground">
-              {products.length}
-            </p>
-            <p className="text-[11px] text-subtle-foreground mt-0.5">{products.filter(p => p.status === 'active').length} ativos</p>
+        {/* KPI Summary Bar — Editorial Terminal Strip */}
+        <div className="editorial-card overflow-hidden">
+          <div className="grid grid-cols-1 divide-y divide-border sm:grid-cols-2 sm:divide-y-0 sm:divide-x lg:grid-cols-5">
+            <div className="p-4">
+              <span className="type-label-subtle">Receita Bruta</span>
+              <p className="type-metric-hero mt-1.5 text-foreground">
+                {MetricsEngine.formatCurrency(totalRevenue, active?.workspace.base_currency)}
+              </p>
+              <p className="mt-1 text-[11.5px] text-muted-foreground">pedidos realizados</p>
+            </div>
+            <div className="p-4">
+              <span className="type-label-subtle">Total de Pedidos</span>
+              <p className="type-metric-hero mt-1.5 text-foreground">{salesMetrics.totalOrders}</p>
+              <p className="mt-1 text-[11.5px] text-muted-foreground">
+                {salesMetrics.paidOrders} pagos
+              </p>
+            </div>
+            <div className="p-4">
+              <span className="type-label-subtle">Ticket Médio</span>
+              <p className="type-metric-hero mt-1.5 text-foreground">
+                {MetricsEngine.formatCurrency(
+                  salesMetrics.averageTicket,
+                  active?.workspace.base_currency,
+                )}
+              </p>
+              <p className="mt-1 text-[11.5px] text-muted-foreground">por pedido pago</p>
+            </div>
+            <div className="p-4">
+              <span className="type-label-subtle">Clientes Cadastrados</span>
+              <p className="type-metric-hero mt-1.5 text-foreground">{customers.length}</p>
+              <p className="mt-1 text-[11.5px] text-muted-foreground">base única</p>
+            </div>
+            <div className="p-4">
+              <span className="type-label-subtle">Produtos Cadastrados</span>
+              <p className="type-metric-hero mt-1.5 text-foreground">{products.length}</p>
+              <p className="mt-1 text-[11.5px] text-muted-foreground">
+                {products.filter((p) => p.status === "active").length} ativos
+              </p>
+            </div>
           </div>
         </div>
 
         {/* Abas */}
         <div className="flex items-center gap-1 border-b border-border pb-1">
-          {[
-            { key: "orders", label: `Pedidos (${orders.length})` },
-            { key: "products", label: `Produtos (${products.length})` },
-            { key: "customers", label: `Clientes (${customers.length})` },
-          ].map((item) => (
+          {(
+            [
+              { key: "orders", label: `Pedidos (${orders.length})` },
+              { key: "products", label: `Produtos (${products.length})` },
+              { key: "customers", label: `Clientes (${customers.length})` },
+            ] as const
+          ).map((item) => (
             <button
               key={item.key}
               type="button"
-              onClick={() => setTab(item.key as any)}
+              onClick={() => setTab(item.key)}
               className={cn(
                 "rounded-md px-3 py-1.5 text-[13px] font-medium transition-colors",
                 tab === item.key
@@ -243,7 +256,8 @@ function SalesPage() {
                 <ShoppingCart className="mx-auto size-8 text-muted-foreground" />
                 <h3 className="type-h3 mt-3 text-foreground">Nenhum pedido registrado</h3>
                 <p className="type-body-sm mx-auto mt-1 max-w-md text-muted-foreground">
-                  Conecte sua plataforma de vendas (Shopify, Hotmart, Kiwify, Stripe, etc.) ou registre pedidos manualmente.
+                  Conecte sua plataforma de vendas (Shopify, Hotmart, Kiwify, Stripe, etc.) ou
+                  registre pedidos manualmente.
                 </p>
                 <button
                   type="button"
@@ -254,9 +268,9 @@ function SalesPage() {
                 </button>
               </div>
             ) : (
-              <div className="overflow-hidden rounded-lg border border-border bg-card">
+              <div className="editorial-card overflow-hidden">
                 <table className="w-full text-left text-[13px]">
-                  <thead className="border-b border-border bg-surface text-[12px] font-semibold text-muted-foreground uppercase tracking-wider">
+                  <thead className="border-b border-border bg-secondary/50 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
                     <tr>
                       <th className="px-4 py-3">Pedido</th>
                       <th className="px-4 py-3">Status</th>
@@ -319,7 +333,8 @@ function SalesPage() {
                 <Boxes className="mx-auto size-8 text-muted-foreground" />
                 <h3 className="type-h3 mt-3 text-foreground">Nenhum produto cadastrado</h3>
                 <p className="type-body-sm mx-auto mt-1 max-w-md text-muted-foreground">
-                  Cadastre seus produtos com preço de venda e custo unitário para permitir o cálculo de Margem Real e Lucro Líquido.
+                  Cadastre seus produtos com preço de venda e custo unitário para permitir o cálculo
+                  de Margem Real e Lucro Líquido.
                 </p>
                 <button
                   type="button"
@@ -330,9 +345,9 @@ function SalesPage() {
                 </button>
               </div>
             ) : (
-              <div className="overflow-hidden rounded-lg border border-border bg-card">
+              <div className="editorial-card overflow-hidden">
                 <table className="w-full text-left text-[13px]">
-                  <thead className="border-b border-border bg-surface text-[12px] font-semibold text-muted-foreground uppercase tracking-wider">
+                  <thead className="border-b border-border bg-secondary/50 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
                     <tr>
                       <th className="px-4 py-3">Produto</th>
                       <th className="px-4 py-3">SKU</th>
@@ -344,11 +359,14 @@ function SalesPage() {
                   </thead>
                   <tbody className="divide-y divide-border">
                     {products.map((prod) => {
-                      const margin = prod.price > 0 ? ((prod.price - prod.cost_price) / prod.price) * 100 : 0;
+                      const margin =
+                        prod.price > 0 ? ((prod.price - prod.cost_price) / prod.price) * 100 : 0;
                       return (
                         <tr key={prod.id} className="hover:bg-secondary/40 transition-colors">
                           <td className="px-4 py-3 font-medium text-foreground">{prod.title}</td>
-                          <td className="px-4 py-3 text-muted-foreground font-mono text-[12px]">{prod.sku || "—"}</td>
+                          <td className="px-4 py-3 text-muted-foreground font-mono text-[12px]">
+                            {prod.sku || "—"}
+                          </td>
                           <td className="px-4 py-3">
                             <span className="inline-flex items-center rounded-full bg-success/10 px-2 py-0.5 text-[11px] font-medium text-success border border-success/30">
                               Ativo
@@ -387,13 +405,14 @@ function SalesPage() {
                 <Users className="mx-auto size-8 text-muted-foreground" />
                 <h3 className="type-h3 mt-3 text-foreground">Nenhum cliente registrado</h3>
                 <p className="type-body-sm mx-auto mt-1 max-w-md text-muted-foreground">
-                  Os clientes são criados e atualizados automaticamente conforme as vendas são integradas ou registradas.
+                  Os clientes são criados e atualizados automaticamente conforme as vendas são
+                  integradas ou registradas.
                 </p>
               </div>
             ) : (
-              <div className="overflow-hidden rounded-lg border border-border bg-card">
+              <div className="editorial-card overflow-hidden">
                 <table className="w-full text-left text-[13px]">
-                  <thead className="border-b border-border bg-surface text-[12px] font-semibold text-muted-foreground uppercase tracking-wider">
+                  <thead className="border-b border-border bg-secondary/50 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
                     <tr>
                       <th className="px-4 py-3">Cliente</th>
                       <th className="px-4 py-3">E-mail</th>
@@ -406,7 +425,9 @@ function SalesPage() {
                     {customers.map((cust) => (
                       <tr key={cust.id} className="hover:bg-secondary/40 transition-colors">
                         <td className="px-4 py-3 font-medium text-foreground">
-                          {cust.first_name ? `${cust.first_name} ${cust.last_name || ""}` : "Cliente"}
+                          {cust.first_name
+                            ? `${cust.first_name} ${cust.last_name || ""}`
+                            : "Cliente"}
                         </td>
                         <td className="px-4 py-3 text-muted-foreground">{cust.email || "—"}</td>
                         <td className="px-4 py-3 text-subtle-foreground">

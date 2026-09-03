@@ -230,3 +230,93 @@ export const trackingSessionsQuery = (workspaceId: string | null) =>
       return data ?? [];
     },
   });
+
+export const trackingSessionsCountQuery = (workspaceId: string | null) =>
+  queryOptions({
+    queryKey: ["tracking-sessions-count", workspaceId],
+    enabled: Boolean(workspaceId),
+    staleTime: 30_000,
+    queryFn: async (): Promise<number> => {
+      if (!workspaceId) return 0;
+      const { count, error } = await supabase
+        .from("tracking_sessions")
+        .select("*", { count: "exact", head: true })
+        .eq("workspace_id", workspaceId);
+
+      if (error) throw new Error(error.message);
+      return count ?? 0;
+    },
+  });
+
+export const gatewayFeesQuery = (workspaceId: string | null) =>
+  queryOptions({
+    queryKey: ["gateway-fees", workspaceId],
+    enabled: Boolean(workspaceId),
+    staleTime: 60_000,
+    queryFn: async (): Promise<GatewayFee[]> => {
+      if (!workspaceId) return [];
+      const { data, error } = await supabase
+        .from("gateway_fees")
+        .select("*")
+        .eq("workspace_id", workspaceId)
+        .eq("active", true)
+        .order("gateway", { ascending: true });
+
+      if (error) throw new Error(error.message);
+      return data ?? [];
+    },
+  });
+
+export const taxesQuery = (workspaceId: string | null) =>
+  queryOptions({
+    queryKey: ["taxes", workspaceId],
+    enabled: Boolean(workspaceId),
+    staleTime: 60_000,
+    queryFn: async (): Promise<Tax[]> => {
+      if (!workspaceId) return [];
+      const { data, error } = await supabase
+        .from("taxes")
+        .select("*")
+        .eq("workspace_id", workspaceId)
+        .eq("active", true)
+        .order("name", { ascending: true });
+
+      if (error) throw new Error(error.message);
+      return data ?? [];
+    },
+  });
+
+export const adMetricsDailyQuery = (workspaceId: string | null) =>
+  queryOptions({
+    queryKey: ["ad-metrics-daily", workspaceId],
+    enabled: Boolean(workspaceId),
+    staleTime: 30_000,
+    queryFn: async (): Promise<AdMetricsDaily[]> => {
+      if (!workspaceId) return [];
+      const { data, error } = await supabase
+        .from("ad_metrics_daily")
+        .select("*")
+        .eq("workspace_id", workspaceId)
+        .order("date", { ascending: false });
+
+      if (error) throw new Error(error.message);
+      return data ?? [];
+    },
+  });
+
+export const orderItemsQuery = (workspaceId: string | null) =>
+  queryOptions({
+    queryKey: ["order-items", workspaceId],
+    enabled: Boolean(workspaceId),
+    staleTime: 30_000,
+    queryFn: async (): Promise<OrderItem[]> => {
+      if (!workspaceId) return [];
+      const { data, error } = await supabase
+        .from("order_items")
+        .select("*")
+        .eq("workspace_id", workspaceId);
+
+      if (error) throw new Error(error.message);
+      return data ?? [];
+    },
+  });

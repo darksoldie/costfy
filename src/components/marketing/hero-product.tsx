@@ -66,9 +66,7 @@ export function HeroProduct() {
         <span className="rounded-sm bg-secondary px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
           Demonstração
         </span>
-        <span className="ml-auto text-[11px] text-subtle-foreground">
-          Últimos 30 dias
-        </span>
+        <span className="ml-auto text-[11px] text-subtle-foreground">Últimos 30 dias</span>
       </div>
 
       <div className="grid gap-px bg-border md:grid-cols-[1.35fr_1fr]">
@@ -119,9 +117,7 @@ export function HeroProduct() {
                 <dt className="text-[10px] uppercase tracking-wide text-subtle-foreground">
                   {kpi.label}
                 </dt>
-                <dd className="type-numeric mt-0.5 text-sm text-foreground">
-                  {kpi.value}
-                </dd>
+                <dd className="type-numeric mt-0.5 text-sm text-foreground">{kpi.value}</dd>
               </div>
             ))}
           </dl>
@@ -130,11 +126,7 @@ export function HeroProduct() {
         {/* Painel do Brain */}
         <div className="bg-surface p-5">
           <div className="flex items-center gap-2">
-            <CostfyMark
-              size={16}
-              state={revealed ? "idle" : "thinking"}
-              className="text-accent"
-            />
+            <CostfyMark size={16} state={revealed ? "idle" : "thinking"} className="text-accent" />
             <span className="text-[12px] font-medium text-foreground">Brain</span>
           </div>
 
@@ -180,12 +172,10 @@ export function HeroProduct() {
             <div className="animate-rise mt-4 rounded-lg border border-accent/25 bg-accent/[0.06] p-3">
               <p className="type-caption text-accent">Oportunidade</p>
               <p className="mt-1.5 text-[13px] leading-relaxed text-foreground">
-                Uma campanha manteve ROAS acima de 4,5x nas últimas 12 horas com
-                orçamento limitado.
+                Uma campanha manteve ROAS acima de 4,5x nas últimas 12 horas com orçamento limitado.
               </p>
               <p className="mt-2 text-[12px] text-muted-foreground">
-                Recomendação: revisar o orçamento diário — a execução exige sua
-                aprovação.
+                Recomendação: revisar o orçamento diário — a execução exige sua aprovação.
               </p>
             </div>
           )}

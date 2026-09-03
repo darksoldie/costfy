@@ -31,9 +31,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
 
   const active = useMemo(() => {
     if (memberships.length === 0) return null;
-    return (
-      memberships.find((m) => m.workspace.id === activeId) ?? memberships[0] ?? null
-    );
+    return memberships.find((m) => m.workspace.id === activeId) ?? memberships[0] ?? null;
   }, [memberships, activeId]);
 
   const value = useMemo<WorkspaceContextValue>(

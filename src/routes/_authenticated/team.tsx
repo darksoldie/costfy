@@ -76,8 +76,7 @@ function TeamPage() {
               <div>
                 <h2 className="type-h3 text-foreground">Membros</h2>
                 <p className="type-body-sm mt-1 text-muted-foreground">
-                  {members.data?.length ?? 0} pessoa(s) com acesso a{" "}
-                  {active.workspace.name}.
+                  {members.data?.length ?? 0} pessoa(s) com acesso a {active.workspace.name}.
                 </p>
               </div>
               {!canManage && (
@@ -91,10 +90,7 @@ function TeamPage() {
             {members.isPending ? (
               <div className="space-y-2 p-5">
                 {[0, 1, 2].map((row) => (
-                  <div
-                    key={row}
-                    className="h-14 animate-pulse rounded-md bg-secondary/60"
-                  />
+                  <div key={row} className="h-14 animate-pulse rounded-md bg-secondary/60" />
                 ))}
               </div>
             ) : (
@@ -120,9 +116,7 @@ function TeamPage() {
             <dl className="mt-4 grid grid-cols-1 gap-3 md:grid-cols-2">
               {(Object.keys(ROLE_LABEL) as AppRole[]).map((role) => (
                 <div key={role} className="rounded-md border border-border p-3">
-                  <dt className="text-[13px] font-medium text-foreground">
-                    {ROLE_LABEL[role]}
-                  </dt>
+                  <dt className="text-[13px] font-medium text-foreground">{ROLE_LABEL[role]}</dt>
                   <dd className="mt-1 text-[12.5px] text-muted-foreground">
                     {ROLE_DESCRIPTION[role]}
                   </dd>
@@ -159,12 +153,8 @@ function MemberRow({ workspaceId, memberId, name, role, canManage }: MemberRowPr
         {label.slice(0, 1).toUpperCase()}
       </span>
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-[13.5px] font-medium text-foreground">
-          {label}
-        </span>
-        <span className="block text-[12px] text-subtle-foreground">
-          {ROLE_LABEL[role]}
-        </span>
+        <span className="block truncate text-[13.5px] font-medium text-foreground">{label}</span>
+        <span className="block text-[12px] text-subtle-foreground">{ROLE_LABEL[role]}</span>
       </span>
 
       {canManage && !isOwner ? (
@@ -213,10 +203,9 @@ function InviteCard({ canManage }: { canManage: boolean }) {
     <section className="rounded-lg border border-dashed border-border p-5">
       <h2 className="type-h3 text-foreground">Convidar pessoas</h2>
       <p className="type-body-sm mt-2 max-w-2xl text-muted-foreground">
-        O envio de convites por e-mail ainda não está ativo. Enquanto isso, quem já
-        criou conta no Costfy pode ser adicionado por um administrador assim que o
-        fluxo de convites entrar no ar — preferimos deixar isso explícito a simular
-        um envio que não acontece.
+        O envio de convites por e-mail ainda não está ativo. Enquanto isso, quem já criou conta no
+        Costfy pode ser adicionado por um administrador assim que o fluxo de convites entrar no ar —
+        preferimos deixar isso explícito a simular um envio que não acontece.
       </p>
       <div className="mt-4 flex flex-wrap gap-2">
         <input

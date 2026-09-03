@@ -89,9 +89,8 @@ function Hero() {
             <span className="text-primary">Movido por inteligência.</span>
           </h1>
           <p className="type-body mx-auto mt-5 max-w-xl text-muted-foreground">
-            Um sistema operacional inteligente para entender, otimizar e operar seu
-            negócio digital — dados, aquisição, vendas, financeiro e execução no mesmo
-            lugar.
+            Um sistema operacional inteligente para entender, otimizar e operar seu negócio digital
+            — dados, aquisição, vendas, financeiro e execução no mesmo lugar.
           </p>
           <div className="mt-7 flex flex-col items-center justify-center gap-2.5 sm:flex-row">
             <Link
@@ -148,10 +147,7 @@ function IntegrationEcosystem() {
               <h3 className="type-caption text-subtle-foreground">{cat.group}</h3>
               <ul className="mt-3 space-y-2">
                 {cat.items.map((item) => (
-                  <li
-                    key={item}
-                    className="flex items-center gap-2 text-[13px] text-foreground"
-                  >
+                  <li key={item} className="flex items-center gap-2 text-[13px] text-foreground">
                     <span className="size-1.5 rounded-full bg-border-strong" />
                     {item}
                   </li>
@@ -220,17 +216,15 @@ function BrainSection() {
         <div className="grid gap-10 lg:grid-cols-[1fr_1.1fr] lg:items-center">
           <div>
             <SectionLabel>Costfy Brain</SectionLabel>
-            <h2 className="type-h1 mt-3 text-foreground">
-              A camada de inteligência operacional.
-            </h2>
+            <h2 className="type-h1 mt-3 text-foreground">A camada de inteligência operacional.</h2>
             <p className="type-body mt-3 text-muted-foreground">
-              O Brain entende o contexto da tela em que você está. Em uma campanha,
-              &ldquo;por que ela caiu?&rdquo; se refere àquela campanha. Em um produto,
-              &ldquo;como melhorar isso?&rdquo; se refere àquele produto.
+              O Brain entende o contexto da tela em que você está. Em uma campanha, &ldquo;por que
+              ela caiu?&rdquo; se refere àquela campanha. Em um produto, &ldquo;como melhorar
+              isso?&rdquo; se refere àquele produto.
             </p>
             <p className="type-body mt-3 text-muted-foreground">
-              Ele nunca gasta dinheiro por conta própria. Toda ação de impacto passa por
-              permissão, guardrails e aprovação.
+              Ele nunca gasta dinheiro por conta própria. Toda ação de impacto passa por permissão,
+              guardrails e aprovação.
             </p>
           </div>
           <ol className="grid gap-px overflow-hidden rounded-xl border border-border bg-border sm:grid-cols-2">
@@ -319,9 +313,7 @@ function SecuritySection() {
         <div className="grid gap-8 lg:grid-cols-[1fr_1fr] lg:items-center">
           <div>
             <SectionLabel>Segurança</SectionLabel>
-            <h2 className="type-h1 mt-3 text-foreground">
-              Controle antes de autonomia.
-            </h2>
+            <h2 className="type-h1 mt-3 text-foreground">Controle antes de autonomia.</h2>
             <p className="type-body mt-3 text-muted-foreground">
               O Brain respeita limites de workspace, permissões do usuário e guardrails
               configuráveis. Nenhuma ação externa acontece sem registro.
@@ -329,10 +321,7 @@ function SecuritySection() {
           </div>
           <ul className="space-y-px overflow-hidden rounded-xl border border-border bg-border">
             {SECURITY.map((item) => (
-              <li
-                key={item.label}
-                className="flex items-center gap-3 bg-background px-5 py-4"
-              >
+              <li key={item.label} className="flex items-center gap-3 bg-background px-5 py-4">
                 <item.icon className="size-4 shrink-0 text-primary" strokeWidth={1.6} />
                 <span className="type-body-sm text-foreground">{item.label}</span>
               </li>
@@ -375,9 +364,8 @@ function PricingSection() {
         <SectionLabel>Planos</SectionLabel>
         <h2 className="type-h1 mt-3 text-foreground">Proporcional ao valor gerado.</h2>
         <p className="type-body mt-3 max-w-2xl text-muted-foreground">
-          Teste de 14 dias com acesso completo. Valores em definição — os limites de cada
-          plano são configuráveis por volume de dados, integrações, usuários e capacidade
-          de execução.
+          Teste de 14 dias com acesso completo. Valores em definição — os limites de cada plano são
+          configuráveis por volume de dados, integrações, usuários e capacidade de execução.
         </p>
         <div className="mt-8 grid gap-px overflow-hidden rounded-xl border border-border bg-border lg:grid-cols-4">
           {PLANS.map((plan) => (
@@ -448,9 +436,7 @@ function FaqSection() {
         <Accordion type="single" collapsible className="mt-6">
           {FAQ.map((item) => (
             <AccordionItem key={item.q} value={item.q}>
-              <AccordionTrigger className="text-left text-[15px]">
-                {item.q}
-              </AccordionTrigger>
+              <AccordionTrigger className="text-left text-[15px]">{item.q}</AccordionTrigger>
               <AccordionContent className="type-body text-muted-foreground">
                 {item.a}
               </AccordionContent>
@@ -476,8 +462,8 @@ function FinalCta() {
         <Boxes className="mx-auto size-5 text-primary" strokeWidth={1.5} />
         <h2 className="type-h1 mt-4 text-foreground">Seu negócio. Compreendido.</h2>
         <p className="type-body mx-auto mt-3 max-w-lg text-muted-foreground">
-          Conecte sua operação e veja o que está acontecendo, por quê, o que importa e o
-          que fazer a seguir.
+          Conecte sua operação e veja o que está acontecendo, por quê, o que importa e o que fazer a
+          seguir.
         </p>
         <Link
           to="/signup"

@@ -18,12 +18,7 @@ export interface CostfyMarkProps extends React.SVGProps<SVGSVGElement> {
   state?: "idle" | "thinking" | "muted";
 }
 
-export function CostfyMark({
-  size = 24,
-  state = "idle",
-  className,
-  ...props
-}: CostfyMarkProps) {
+export function CostfyMark({ size = 24, state = "idle", className, ...props }: CostfyMarkProps) {
   const thinking = state === "thinking";
 
   return (
@@ -69,11 +64,7 @@ export interface CostfyLogoProps {
 }
 
 /** Lockup horizontal oficial: símbolo + wordmark (+ assinatura opcional). */
-export function CostfyLogo({
-  className,
-  markSize = 22,
-  withTagline = false,
-}: CostfyLogoProps) {
+export function CostfyLogo({ className, markSize = 22, withTagline = false }: CostfyLogoProps) {
   return (
     <span className={cn("inline-flex items-center gap-2.5", className)}>
       <CostfyMark size={markSize} className="text-primary" />

@@ -117,15 +117,22 @@ function ProductPage() {
       >
         <ol className="grid gap-px overflow-hidden rounded-xl border border-border bg-border md:grid-cols-4">
           {[
-            ["Coleta", "Integrações trazem dados de mídia, vendas e finanças com estado de sincronização explícito."],
+            [
+              "Coleta",
+              "Integrações trazem dados de mídia, vendas e finanças com estado de sincronização explícito.",
+            ],
             ["Compreensão", "Os dados são normalizados em um modelo único por workspace."],
-            ["Insight", "O Brain identifica desvios, oportunidades e riscos com o contexto do seu negócio."],
-            ["Ação", "A recomendação vem com impacto estimado e depende da sua aprovação para executar."],
+            [
+              "Insight",
+              "O Brain identifica desvios, oportunidades e riscos com o contexto do seu negócio.",
+            ],
+            [
+              "Ação",
+              "A recomendação vem com impacto estimado e depende da sua aprovação para executar.",
+            ],
           ].map(([title, text], i) => (
             <li key={title} className="bg-background p-5">
-              <span className="type-numeric text-[12px] text-subtle-foreground">
-                0{i + 1}
-              </span>
+              <span className="type-numeric text-[12px] text-subtle-foreground">0{i + 1}</span>
               <h3 className="type-h3 mt-2 text-foreground">{title}</h3>
               <p className="type-body-sm mt-1.5 text-muted-foreground">{text}</p>
             </li>

@@ -76,7 +76,13 @@ export function QuickBrainDrawer({
       currentPage: getPageLabel(location.pathname),
       summary: {
         financials: MetricsEngine.calculateFinancials({ grossRevenue: 0, cogs: 0, adSpend: 0 }),
-        traffic: MetricsEngine.calculateTraffic({ impressions: 0, clicks: 0, spend: 0, conversions: 0, revenue: 0 }),
+        traffic: MetricsEngine.calculateTraffic({
+          impressions: 0,
+          clicks: 0,
+          spend: 0,
+          conversions: 0,
+          revenue: 0,
+        }),
         totalOrders: 0,
         totalProducts: 0,
         totalCampaigns: 0,
@@ -108,8 +114,9 @@ export function QuickBrainDrawer({
       if (res.success) {
         setExecutedAction(proposal.id);
       }
-    } catch (err: any) {
-      alert(err?.message || "Erro ao executar ação");
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Erro ao executar ação";
+      alert(message);
     }
   }
 
@@ -137,7 +144,8 @@ export function QuickBrainDrawer({
                 </span>
               </div>
               <p className="text-[11px] text-muted-foreground">
-                Lendo: <strong className="text-foreground">{getPageLabel(location.pathname)}</strong>
+                Lendo:{" "}
+                <strong className="text-foreground">{getPageLabel(location.pathname)}</strong>
               </p>
             </div>
           </div>
@@ -167,7 +175,9 @@ export function QuickBrainDrawer({
               <span
                 className={cn(
                   "mt-1 text-[10px]",
-                  msg.sender === "user" ? "text-primary-foreground/70 text-right" : "text-subtle-foreground",
+                  msg.sender === "user"
+                    ? "text-primary-foreground/70 text-right"
+                    : "text-subtle-foreground",
                 )}
               >
                 {msg.timestamp}
@@ -204,7 +214,9 @@ export function QuickBrainDrawer({
           </div>
           <div className="mt-2 flex items-center justify-between px-1 text-[11px] text-subtle-foreground">
             <span>Intelligent Operating System</span>
-            <kbd className="rounded border border-border px-1 py-0.5 font-mono text-[9px]">Esc fecha</kbd>
+            <kbd className="rounded border border-border px-1 py-0.5 font-mono text-[9px]">
+              Esc fecha
+            </kbd>
           </div>
         </form>
       </div>

@@ -31,7 +31,8 @@ export const Route = createFileRoute("/_authenticated/tracking")({
       { title: "Tracking & Gerador de UTMs — Costfy" },
       {
         name: "description",
-        content: "Crie e valide URLs rastreáveis com parâmetros UTM padronizados e rastreie sessões de tráfego.",
+        content:
+          "Crie e valide URLs rastreáveis com parâmetros UTM padronizados e rastreie sessões de tráfego.",
       },
     ],
   }),
@@ -144,16 +145,18 @@ function TrackingPage() {
       <div className="space-y-6">
         {/* Abas */}
         <div className="flex items-center gap-1 border-b border-border pb-1">
-          {[
-            { key: "builder", label: "Gerador de UTMs" },
-            { key: "links", label: `Links Criados (${utmLinks.length})` },
-            { key: "sessions", label: `Sessões de Tráfego (${sessions.length})` },
-            { key: "script", label: "Script de Rastreamento" },
-          ].map((item) => (
+          {(
+            [
+              { key: "builder", label: "Gerador de UTMs" },
+              { key: "links", label: `Links Criados (${utmLinks.length})` },
+              { key: "sessions", label: `Sessões de Tráfego (${sessions.length})` },
+              { key: "script", label: "Script de Rastreamento" },
+            ] as const
+          ).map((item) => (
             <button
               key={item.key}
               type="button"
-              onClick={() => setTab(item.key as any)}
+              onClick={() => setTab(item.key)}
               className={cn(
                 "rounded-md px-3 py-1.5 text-[13px] font-medium transition-colors",
                 tab === item.key
@@ -169,10 +172,11 @@ function TrackingPage() {
         {/* Gerador de UTMs */}
         {tab === "builder" && (
           <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-            <div className="rounded-xl border border-border bg-card p-6 space-y-4">
+            <div className="editorial-card p-6 space-y-4">
               <h3 className="text-[15px] font-semibold text-foreground">Configurar Parâmetros</h3>
               <p className="text-[12.5px] text-muted-foreground">
-                Padronize suas tags para que o Costfy Brain e o motor de atribuição reconheçam exatamente a origem de cada venda.
+                Padronize suas tags para que o Costfy Brain e o motor de atribuição reconheçam
+                exatamente a origem de cada venda.
               </p>
 
               <div className="space-y-3.5">
@@ -291,14 +295,14 @@ function TrackingPage() {
             </div>
 
             {/* Preview do Link Gerado */}
-            <div className="flex flex-col justify-between rounded-xl border border-border bg-card p-6">
+            <div className="editorial-card flex flex-col justify-between p-6">
               <div>
                 <h3 className="text-[15px] font-semibold text-foreground">URL Rastreável Pronta</h3>
                 <p className="text-[12.5px] text-muted-foreground mt-0.5">
                   Copie e use diretamente em seus criativos e anúncios.
                 </p>
 
-                <div className="mt-4 rounded-lg border border-border bg-surface p-3.5 font-mono text-[12.5px] text-foreground break-all">
+                <div className="mt-4 rounded-md border border-border bg-surface/60 p-3.5 font-mono text-[12px] text-foreground break-all">
                   {generatedUrl || "Preencha a URL de destino e os parâmetros ao lado..."}
                 </div>
               </div>
@@ -359,9 +363,9 @@ function TrackingPage() {
                 </button>
               </div>
             ) : (
-              <div className="overflow-hidden rounded-lg border border-border bg-card">
+              <div className="editorial-card overflow-hidden">
                 <table className="w-full text-left text-[13px]">
-                  <thead className="border-b border-border bg-surface text-[12px] font-semibold text-muted-foreground uppercase tracking-wider">
+                  <thead className="border-b border-border bg-secondary/50 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
                     <tr>
                       <th className="px-4 py-3">Identificador</th>
                       <th className="px-4 py-3">Source / Medium</th>
@@ -421,13 +425,14 @@ function TrackingPage() {
                 <Workflow className="mx-auto size-8 text-muted-foreground" />
                 <h3 className="type-h3 mt-3 text-foreground">Nenhuma sessão registrada</h3>
                 <p className="type-body-sm mx-auto mt-1 max-w-md text-muted-foreground">
-                  Instale o script de tracking no seu site para capturar automaticamente os acessos dos visitantes e tags UTM.
+                  Instale o script de tracking no seu site para capturar automaticamente os acessos
+                  dos visitantes e tags UTM.
                 </p>
               </div>
             ) : (
-              <div className="overflow-hidden rounded-lg border border-border bg-card">
+              <div className="editorial-card overflow-hidden">
                 <table className="w-full text-left text-[13px]">
-                  <thead className="border-b border-border bg-surface text-[12px] font-semibold text-muted-foreground uppercase tracking-wider">
+                  <thead className="border-b border-border bg-secondary/50 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
                     <tr>
                       <th className="px-4 py-3">Início</th>
                       <th className="px-4 py-3">Página de Entrada</th>
@@ -448,7 +453,9 @@ function TrackingPage() {
                         <td className="px-4 py-3 text-muted-foreground font-mono text-[12px]">
                           {s.utm_source ? `${s.utm_source} / ${s.utm_campaign || ""}` : "Direto"}
                         </td>
-                        <td className="px-4 py-3 text-subtle-foreground capitalize">{s.device_type || "Desktop"}</td>
+                        <td className="px-4 py-3 text-subtle-foreground capitalize">
+                          {s.device_type || "Desktop"}
+                        </td>
                         <td className="px-4 py-3 text-right text-muted-foreground">
                           {s.city ? `${s.city}, ${s.country}` : s.country || "BR"}
                         </td>
@@ -463,13 +470,17 @@ function TrackingPage() {
 
         {/* Script de Rastreamento */}
         {tab === "script" && (
-          <div className="rounded-xl border border-border bg-card p-6 space-y-4">
-            <h3 className="text-[15px] font-semibold text-foreground">Script de Rastreamento Costfy</h3>
+          <div className="editorial-card p-6 space-y-4">
+            <h3 className="text-[15px] font-semibold text-foreground">
+              Script de Rastreamento Costfy
+            </h3>
             <p className="text-[12.5px] text-muted-foreground">
-              Adicione esta tag no cabeçalho (<code className="text-foreground">&lt;head&gt;</code>) do seu site, loja ou checkout para capturar sessões, UTMs e eventos de conversão em tempo real.
+              Adicione esta tag no cabeçalho (<code className="text-foreground">&lt;head&gt;</code>)
+              do seu site, loja ou checkout para capturar sessões, UTMs e eventos de conversão em
+              tempo real.
             </p>
 
-            <pre className="rounded-lg border border-border bg-surface p-4 font-mono text-[12px] text-foreground overflow-x-auto">
+            <pre className="rounded-md border border-border bg-surface/60 p-4 font-mono text-[12px] text-foreground overflow-x-auto">
               {`<!-- Costfy Pixel Tracking Tag -->
 <script>
   (function(w,d,s,u,wid){

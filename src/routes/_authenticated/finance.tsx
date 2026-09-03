@@ -22,6 +22,10 @@ import {
   productsQuery,
   fixedCostsQuery,
   financialEntriesQuery,
+  orderItemsQuery,
+  gatewayFeesQuery,
+  taxesQuery,
+  adMetricsDailyQuery,
   type FixedCost,
   type FinancialEntry,
 } from "@/lib/business-data";
@@ -35,7 +39,8 @@ export const Route = createFileRoute("/_authenticated/finance")({
       { title: "Financeiro & DRE Gerencial — Costfy" },
       {
         name: "description",
-        content: "DRE em cascata: Receita Líquida − CMV − Taxas − Impostos − Tráfego − Custos Fixos = Lucro Real.",
+        content:
+          "DRE em cascata: Receita Líquida − CMV − Taxas − Impostos − Tráfego − Custos Fixos = Lucro Real.",
       },
     ],
   }),
@@ -56,27 +61,31 @@ function FinancePage() {
   const { data: products = [] } = useQuery(productsQuery(workspaceId));
   const { data: fixedCosts = [] } = useQuery(fixedCostsQuery(workspaceId));
   const { data: entries = [] } = useQuery(financialEntriesQuery(workspaceId));
+  const { data: orderItems = [] } = useQuery(orderItemsQuery(workspaceId));
+  const { data: gatewayFees = [] } = useQuery(gatewayFeesQuery(workspaceId));
+  const { data: taxes = [] } = useQuery(taxesQuery(workspaceId));
+  const { data: adMetrics = [] } = useQuery(adMetricsDailyQuery(workspaceId));
 
   const [tab, setTab] = useState<"dre" | "fixed_costs" | "entries">("dre");
   const [fixedCostModalOpen, setFixedCostModalOpen] = useState(false);
   const [entryModalOpen, setEntryModalOpen] = useState(false);
 
-  // Form states para custo fixo
+  // Form de Custo Fixo
   const [costName, setCostName] = useState("");
   const [costCategory, setCostCategory] = useState("software");
   const [costAmount, setCostAmount] = useState("");
 
-  // Form states para lançamento
+  // Form de Lançamento Avulso
   const [entryDesc, setEntryDesc] = useState("");
-  const [entryType, setEntryType] = useState<"income" | "expense">("expense");
   const [entryAmount, setEntryAmount] = useState("");
-  const [entryCategory, setEntryCategory] = useState("Operacional");
+  const [entryType, setEntryType] = useState<FinancialEntry["type"]>("expense");
+  const [entryCategory, setEntryCategory] = useState("operational");
 
   const createFixedCost = useMutation({
     mutationFn: async () => {
       if (!workspaceId) throw new Error("Workspace não selecionado");
-      if (!costName.trim()) throw new Error("Informe o nome da despesa");
-      if (!costAmount || parseFloat(costAmount) <= 0) throw new Error("Informe o valor mensal");
+      if (!costName.trim()) throw new Error("Informe o nome do custo");
+      if (!costAmount || parseFloat(costAmount) <= 0) throw new Error("Informe o valor");
 
       const { data, error } = await supabase
         .from("fixed_costs")
@@ -136,24 +145,15 @@ function FinancePage() {
     },
   });
 
-  // Cálculo real consolidado da DRE
-  const grossRevenue = orders.reduce((acc, o) => acc + (o.total_amount || 0), 0);
-  const totalAdSpend = campaigns.reduce((acc, c) => acc + (c.budget || 0), 0);
-  const totalFixedCosts = fixedCosts.reduce((acc, fc) => acc + (fc.amount || 0), 0);
-
-  // Estimativas de taxas e CMV com base nos cadastros reais
-  const estimatedCogs = orders.length * 25; // CMV médio se não houver item vinculado
-  const estimatedGatewayFees = grossRevenue * 0.0399; // Taxa padrão ~3.99%
-  const estimatedTaxes = grossRevenue * 0.06; // Simples Nacional médio ~6%
-
-  const dre = MetricsEngine.calculateFinancials({
-    grossRevenue,
-    refundsAndDiscounts: 0,
-    cogs: estimatedCogs,
-    gatewayFees: estimatedGatewayFees,
-    taxes: estimatedTaxes,
-    adSpend: totalAdSpend,
-    fixedCosts: totalFixedCosts,
+  // Cálculo canônico e verídico da DRE a partir dos dados do workspace
+  const dre = MetricsEngine.calculateWorkspaceFinancials({
+    orders,
+    campaigns,
+    fixedCosts,
+    orderItems,
+    gatewayFees,
+    taxes,
+    adMetricsDaily: adMetrics,
   });
 
   return (
@@ -181,64 +181,84 @@ function FinancePage() {
       }
     >
       <div className="space-y-6">
-        {/* KPI Summary Cards */}
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <div className="rounded-lg border border-border bg-card p-4">
-            <p className="type-caption text-muted-foreground">Receita Bruta</p>
-            <p className="type-numeric mt-1.5 text-2xl font-semibold text-foreground">
-              {MetricsEngine.formatCurrency(dre.grossRevenue, active?.workspace.base_currency)}
-            </p>
-            <p className="text-[11px] text-subtle-foreground mt-1">total transacionado</p>
-          </div>
+        {/* KPI Executive Overview Strip */}
+        <div className="editorial-card overflow-hidden">
+          <div className="grid grid-cols-1 divide-y divide-border sm:grid-cols-2 sm:divide-y-0 sm:divide-x lg:grid-cols-4">
+            <div className="p-4 sm:p-5">
+              <span className="type-label-subtle">Receita Bruta</span>
+              <p className="type-metric-hero mt-2 text-foreground">
+                {MetricsEngine.formatCurrency(dre.grossRevenue, active?.workspace.base_currency)}
+              </p>
+              <p className="mt-1.5 text-[11.5px] text-muted-foreground">
+                total bruto transacionado
+              </p>
+            </div>
 
-          <div className="rounded-lg border border-border bg-card p-4">
-            <p className="type-caption text-muted-foreground">Investimento em Mídia</p>
-            <p className="type-numeric mt-1.5 text-2xl font-semibold text-foreground">
-              {MetricsEngine.formatCurrency(dre.adSpend, active?.workspace.base_currency)}
-            </p>
-            <p className="text-[11px] text-subtle-foreground mt-1">tráfego pago</p>
-          </div>
+            <div className="p-4 sm:p-5">
+              <span className="type-label-subtle">Investimento em Mídia</span>
+              <p className="type-metric-hero mt-2 text-foreground">
+                {MetricsEngine.formatCurrency(dre.adSpend, active?.workspace.base_currency)}
+              </p>
+              <p className="mt-1.5 text-[11.5px] text-muted-foreground">
+                gasto consolidado em anúncios
+              </p>
+            </div>
 
-          <div
-            className={cn(
-              "rounded-lg border p-4",
-              dre.trueProfit >= 0
-                ? "border-success/30 bg-success/[0.04]"
-                : "border-destructive/30 bg-destructive/[0.04]",
-            )}
-          >
-            <p className="type-caption text-muted-foreground">Lucro Líquido Real</p>
-            <p
-              className={cn(
-                "type-numeric mt-1.5 text-2xl font-semibold",
-                dre.trueProfit >= 0 ? "text-success" : "text-destructive",
-              )}
-            >
-              {MetricsEngine.formatCurrency(dre.trueProfit, active?.workspace.base_currency)}
-            </p>
-            <p className="text-[11px] text-subtle-foreground mt-1">após todas as deduções</p>
-          </div>
+            <div className="p-4 sm:p-5">
+              <span className="type-label-subtle">Lucro Líquido Real</span>
+              <p
+                className={cn(
+                  "type-metric-hero mt-2",
+                  dre.trueProfit >= 0 ? "text-success" : "text-destructive",
+                )}
+              >
+                {MetricsEngine.formatCurrency(dre.trueProfit, active?.workspace.base_currency)}
+              </p>
+              <p className="mt-1.5 text-[11.5px] text-muted-foreground">
+                após CMV, taxas, mídia e fixos
+              </p>
+            </div>
 
-          <div className="rounded-lg border border-border bg-card p-4">
-            <p className="type-caption text-muted-foreground">Margem Real Líquida</p>
-            <p className="type-numeric mt-1.5 text-2xl font-semibold text-foreground">
-              {MetricsEngine.formatPercent(dre.realMarginPercent)}
-            </p>
-            <p className="text-[11px] text-subtle-foreground mt-1">lucro / receita bruta</p>
+            <div className="p-4 sm:p-5">
+              <span className="type-label-subtle">Margem Real Líquida</span>
+              <div className="mt-2 flex items-baseline gap-2">
+                <p className="type-metric-hero text-foreground">
+                  {MetricsEngine.formatPercent(dre.realMarginPercent)}
+                </p>
+                <span
+                  className={cn(
+                    "inline-flex items-center rounded px-1.5 py-0.5 text-[10.5px] font-semibold tabular-nums border",
+                    dre.realMarginPercent >= 20
+                      ? "bg-success/10 text-success border-success/25"
+                      : dre.realMarginPercent >= 0
+                        ? "bg-warning/10 text-warning border-warning/25"
+                        : "bg-destructive/10 text-destructive border-destructive/25",
+                  )}
+                >
+                  {dre.realMarginPercent >= 0 ? "+" : ""}
+                  {dre.realMarginPercent.toFixed(1)}%
+                </span>
+              </div>
+              <p className="mt-1.5 text-[11.5px] text-muted-foreground">
+                lucro real / faturamento bruto
+              </p>
+            </div>
           </div>
         </div>
 
         {/* Abas */}
         <div className="flex items-center gap-1 border-b border-border pb-1">
-          {[
-            { key: "dre", label: "DRE Gerencial Completa" },
-            { key: "fixed_costs", label: `Custos Fixos (${fixedCosts.length})` },
-            { key: "entries", label: `Lançamentos de Caixa (${entries.length})` },
-          ].map((item) => (
+          {(
+            [
+              { key: "dre", label: "DRE Gerencial Completa" },
+              { key: "fixed_costs", label: `Custos Fixos (${fixedCosts.length})` },
+              { key: "entries", label: `Lançamentos de Caixa (${entries.length})` },
+            ] as const
+          ).map((item) => (
             <button
               key={item.key}
               type="button"
-              onClick={() => setTab(item.key as any)}
+              onClick={() => setTab(item.key)}
               className={cn(
                 "rounded-md px-3 py-1.5 text-[13px] font-medium transition-colors",
                 tab === item.key
@@ -256,8 +276,12 @@ function FinancePage() {
           <div className="overflow-hidden rounded-xl border border-border bg-card">
             <div className="border-b border-border bg-surface px-5 py-3.5 flex items-center justify-between">
               <div>
-                <h3 className="text-[14px] font-semibold text-foreground">Demonstrativo de Resultado (DRE)</h3>
-                <p className="text-[12px] text-muted-foreground">Detalhamento linha a linha da formação do lucro</p>
+                <h3 className="text-[14px] font-semibold text-foreground">
+                  Demonstrativo de Resultado (DRE)
+                </h3>
+                <p className="text-[12px] text-muted-foreground">
+                  Detalhamento linha a linha da formação do lucro
+                </p>
               </div>
               <span className="rounded-md bg-secondary border border-border px-2.5 py-1 text-[11px] font-mono text-muted-foreground">
                 Moeda Base: {active?.workspace.base_currency || "BRL"}
@@ -268,7 +292,9 @@ function FinancePage() {
               {/* 1. Receita Bruta */}
               <div className="flex items-center justify-between px-5 py-3 bg-card font-medium text-foreground">
                 <span className="flex items-center gap-2">
-                  <span className="grid size-5 place-items-center rounded bg-primary/10 text-primary text-[11px] font-bold">1</span>
+                  <span className="grid size-5 place-items-center rounded bg-primary/10 text-primary text-[11px] font-bold">
+                    1
+                  </span>
                   (+) Receita Bruta de Vendas
                 </span>
                 <span className="type-numeric font-semibold">
@@ -280,7 +306,10 @@ function FinancePage() {
               <div className="flex items-center justify-between px-5 py-2.5 bg-surface/50 text-muted-foreground pl-10 text-[13px]">
                 <span>(−) Reembolsos, Estornos e Descontos</span>
                 <span className="type-numeric">
-                  {MetricsEngine.formatCurrency(dre.refundsAndDiscounts, active?.workspace.base_currency)}
+                  {MetricsEngine.formatCurrency(
+                    dre.refundsAndDiscounts,
+                    active?.workspace.base_currency,
+                  )}
                 </span>
               </div>
 
@@ -294,21 +323,42 @@ function FinancePage() {
 
               {/* 4. Custos Variáveis */}
               <div className="flex items-center justify-between px-5 py-2.5 bg-surface/50 text-muted-foreground pl-10 text-[13px]">
-                <span>(−) CMV / Custo de Mercadorias e Produtos</span>
+                <span className="flex items-center gap-1.5">
+                  (−) CMV / Custo de Mercadorias e Produtos
+                  {!dre.hasConfiguredCogs && (
+                    <span className="rounded bg-muted px-1.5 py-0.5 text-[10.5px] text-muted-foreground border border-border">
+                      Não cadastrado
+                    </span>
+                  )}
+                </span>
                 <span className="type-numeric text-destructive">
                   {MetricsEngine.formatCurrency(dre.cogs, active?.workspace.base_currency)}
                 </span>
               </div>
 
               <div className="flex items-center justify-between px-5 py-2.5 bg-surface/50 text-muted-foreground pl-10 text-[13px]">
-                <span>(−) Taxas de Gateway e Processadores de Pagamento</span>
+                <span className="flex items-center gap-1.5">
+                  (−) Taxas de Gateway e Processadores de Pagamento
+                  {!dre.hasConfiguredGatewayFees && (
+                    <span className="rounded bg-muted px-1.5 py-0.5 text-[10.5px] text-muted-foreground border border-border">
+                      Sem taxas cadastradas
+                    </span>
+                  )}
+                </span>
                 <span className="type-numeric text-destructive">
                   {MetricsEngine.formatCurrency(dre.gatewayFees, active?.workspace.base_currency)}
                 </span>
               </div>
 
               <div className="flex items-center justify-between px-5 py-2.5 bg-surface/50 text-muted-foreground pl-10 text-[13px]">
-                <span>(−) Impostos e Tributos sobre Faturamento</span>
+                <span className="flex items-center gap-1.5">
+                  (−) Impostos e Tributos sobre Faturamento
+                  {!dre.hasConfiguredTaxes && (
+                    <span className="rounded bg-muted px-1.5 py-0.5 text-[10.5px] text-muted-foreground border border-border">
+                      Sem alíquota cadastrada
+                    </span>
+                  )}
+                </span>
                 <span className="type-numeric text-destructive">
                   {MetricsEngine.formatCurrency(dre.taxes, active?.workspace.base_currency)}
                 </span>
@@ -326,7 +376,10 @@ function FinancePage() {
                 <span>(=) Margem de Contribuição</span>
                 <div className="text-right">
                   <span className="type-numeric">
-                    {MetricsEngine.formatCurrency(dre.contributionMargin, active?.workspace.base_currency)}
+                    {MetricsEngine.formatCurrency(
+                      dre.contributionMargin,
+                      active?.workspace.base_currency,
+                    )}
                   </span>
                   <span className="ml-2 text-[11px] text-muted-foreground">
                     ({MetricsEngine.formatPercent(dre.contributionMarginPercent)})
@@ -346,7 +399,9 @@ function FinancePage() {
               <div
                 className={cn(
                   "flex items-center justify-between px-5 py-4 font-bold text-[15px]",
-                  dre.trueProfit >= 0 ? "bg-success/10 text-success" : "bg-destructive/10 text-destructive",
+                  dre.trueProfit >= 0
+                    ? "bg-success/10 text-success"
+                    : "bg-destructive/10 text-destructive",
                 )}
               >
                 <span>(=) LUCRO LÍQUIDO REAL</span>
@@ -371,7 +426,8 @@ function FinancePage() {
                 <Receipt className="mx-auto size-8 text-muted-foreground" />
                 <h3 className="type-h3 mt-3 text-foreground">Nenhum custo fixo cadastrado</h3>
                 <p className="type-body-sm mx-auto mt-1 max-w-md text-muted-foreground">
-                  Cadastre ferramentas de SaaS, hospedagem, equipe e aluguel para abater automaticamente no cálculo do Lucro Real.
+                  Cadastre ferramentas de SaaS, hospedagem, equipe e aluguel para abater
+                  automaticamente no cálculo do Lucro Real.
                 </p>
                 <button
                   type="button"
@@ -396,7 +452,9 @@ function FinancePage() {
                     {fixedCosts.map((fc) => (
                       <tr key={fc.id} className="hover:bg-secondary/40 transition-colors">
                         <td className="px-4 py-3 font-medium text-foreground">{fc.name}</td>
-                        <td className="px-4 py-3 text-muted-foreground capitalize">{fc.category}</td>
+                        <td className="px-4 py-3 text-muted-foreground capitalize">
+                          {fc.category}
+                        </td>
                         <td className="px-4 py-3 text-subtle-foreground">Mensal</td>
                         <td className="px-4 py-3 text-right type-numeric font-medium text-destructive">
                           {MetricsEngine.formatCurrency(fc.amount, fc.currency)}
@@ -416,7 +474,9 @@ function FinancePage() {
             {entries.length === 0 ? (
               <div className="rounded-xl border border-dashed border-border p-10 text-center bg-surface">
                 <Calculator className="mx-auto size-8 text-muted-foreground" />
-                <h3 className="type-h3 mt-3 text-foreground">Nenhum lançamento avulso registrado</h3>
+                <h3 className="type-h3 mt-3 text-foreground">
+                  Nenhum lançamento avulso registrado
+                </h3>
                 <p className="type-body-sm mx-auto mt-1 max-w-md text-muted-foreground">
                   Registre receitas extras, reembolsos manuais ou ajustes de caixa.
                 </p>
@@ -612,12 +672,15 @@ function FinancePage() {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[13px] font-medium text-foreground mb-1">
-                    Tipo
-                  </label>
+                  <label className="block text-[13px] font-medium text-foreground mb-1">Tipo</label>
                   <select
                     value={entryType}
-                    onChange={(e) => setEntryType(e.target.value as any)}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val === "expense" || val === "income") {
+                        setEntryType(val);
+                      }
+                    }}
                     className={inputClass}
                   >
                     <option value="expense">Saída / Despesa</option>

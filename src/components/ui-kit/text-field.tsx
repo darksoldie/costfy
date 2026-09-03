@@ -3,8 +3,7 @@ import { useId } from "react";
 import { inputClass } from "@/lib/ui";
 import { cn } from "@/lib/utils";
 
-export interface TextFieldProps
-  extends Omit<React.InputHTMLAttributes<HTMLInputElement>, "id"> {
+export interface TextFieldProps extends Omit<React.InputHTMLAttributes<HTMLInputElement>, "id"> {
   label: string;
   /** Texto de apoio exibido abaixo do campo. */
   hint?: string;
@@ -13,22 +12,13 @@ export interface TextFieldProps
 }
 
 /** Campo de texto rotulado — rótulo sempre visível, nunca apenas placeholder. */
-export function TextField({
-  label,
-  hint,
-  error,
-  className,
-  ...props
-}: TextFieldProps) {
+export function TextField({ label, hint, error, className, ...props }: TextFieldProps) {
   const id = useId();
   const describedBy = error ? `${id}-error` : hint ? `${id}-hint` : undefined;
 
   return (
     <div className="space-y-1.5">
-      <label
-        htmlFor={id}
-        className="block text-[12.5px] font-medium text-foreground"
-      >
+      <label htmlFor={id} className="block text-[12.5px] font-medium text-foreground">
         {label}
       </label>
       <input

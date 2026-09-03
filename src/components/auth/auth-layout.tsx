@@ -34,22 +34,18 @@ export function AuthLayout({
           {footer && <div className="mt-6 text-[13px] text-muted-foreground">{footer}</div>}
         </div>
 
-        <p className="text-[12px] text-subtle-foreground">
-          © {new Date().getFullYear()} Costfy
-        </p>
+        <p className="text-[12px] text-subtle-foreground">© {new Date().getFullYear()} Costfy</p>
       </div>
 
       <aside className="hidden flex-col justify-between border-l border-border bg-surface p-10 lg:flex">
-        <span className="type-caption text-subtle-foreground">
-          Sistema operacional inteligente
-        </span>
+        <span className="type-caption text-subtle-foreground">Sistema operacional inteligente</span>
         <div>
           <p className="type-h2 max-w-sm text-foreground">
             Dados conectados, margem real e decisões com contexto.
           </p>
           <p className="type-body-sm mt-3 max-w-sm text-muted-foreground">
-            O Costfy interpreta mídia, vendas e finanças no mesmo modelo — e
-            nenhuma ação acontece sem a sua aprovação.
+            O Costfy interpreta mídia, vendas e finanças no mesmo modelo — e nenhuma ação acontece
+            sem a sua aprovação.
           </p>
         </div>
         <span className="text-[11px] font-medium uppercase tracking-[0.22em] text-subtle-foreground">

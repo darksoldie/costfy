@@ -57,9 +57,7 @@ function SettingsPage() {
   return (
     <AppShell title="Configurações" description="Dados do workspace ativo.">
       {!active ? (
-        <p className="type-body-sm text-muted-foreground">
-          Nenhum workspace ativo.
-        </p>
+        <p className="type-body-sm text-muted-foreground">Nenhum workspace ativo.</p>
       ) : (
         <dl className="max-w-2xl divide-y divide-border rounded-lg border border-border bg-card">
           {rows.map((row) => (

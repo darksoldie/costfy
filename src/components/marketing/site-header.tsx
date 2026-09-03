@@ -32,7 +32,6 @@ export function SiteHeader() {
     await navigate({ to: "/login", replace: true });
   }
 
-
   return (
     <header className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-xl">
       <div className="mx-auto flex h-14 max-w-6xl items-center gap-6 px-5">
@@ -57,9 +56,7 @@ export function SiteHeader() {
           <button
             type="button"
             onClick={toggleTheme}
-            aria-label={
-              resolvedTheme === "dark" ? "Ativar modo claro" : "Ativar modo escuro"
-            }
+            aria-label={resolvedTheme === "dark" ? "Ativar modo claro" : "Ativar modo escuro"}
             className="inline-flex size-8 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
           >
             {resolvedTheme === "dark" ? (
@@ -85,7 +82,6 @@ export function SiteHeader() {
               </button>
             </>
           ) : (
-
             <>
               <Link
                 to="/login"
@@ -150,7 +146,6 @@ export function SiteHeader() {
               </button>
             </>
           ) : (
-
             <Link
               to="/login"
               onClick={() => setOpen(false)}
@@ -159,7 +154,6 @@ export function SiteHeader() {
               Entrar
             </Link>
           )}
-
         </nav>
       </div>
     </header>

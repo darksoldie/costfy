@@ -24,7 +24,8 @@ export const Route = createFileRoute("/_authenticated/automations")({
       { title: "Automações & Regras — Costfy" },
       {
         name: "description",
-        content: "Crie e gerencie automações operacionais (Trigger → Condition → Action) com guardrails de segurança.",
+        content:
+          "Crie e gerencie automações operacionais (Trigger → Condition → Action) com guardrails de segurança.",
       },
     ],
   }),
@@ -68,7 +69,7 @@ function AutomationsPage() {
         .order("created_at", { ascending: false });
 
       if (error) throw new Error(error.message);
-      return (data as any) ?? [];
+      return (data as AutomationItem[]) ?? [];
     },
   });
 
@@ -129,9 +130,12 @@ function AutomationsPage() {
               <ShieldCheck className="size-5" />
             </div>
             <div>
-              <p className="text-[13.5px] font-semibold text-foreground">Guardrails de Segurança Ativos</p>
+              <p className="text-[13.5px] font-semibold text-foreground">
+                Guardrails de Segurança Ativos
+              </p>
               <p className="text-[12px] text-muted-foreground">
-                Toda ação que impacta orçamento ou pausamento externo exige confirmação e respeita limites automáticos de segurança.
+                Toda ação que impacta orçamento ou pausamento externo exige confirmação e respeita
+                limites automáticos de segurança.
               </p>
             </div>
           </div>
@@ -149,7 +153,8 @@ function AutomationsPage() {
             <Zap className="mx-auto size-8 text-muted-foreground" />
             <h3 className="type-h3 mt-3 text-foreground">Nenhuma regra de automação ativa</h3>
             <p className="type-body-sm mx-auto mt-1 max-w-md text-muted-foreground">
-              Crie regras para alertar sobre queda de ROAS, disparar notificações quando a margem cair ou preparar ações automáticas.
+              Crie regras para alertar sobre queda de ROAS, disparar notificações quando a margem
+              cair ou preparar ações automáticas.
             </p>
             <button
               type="button"

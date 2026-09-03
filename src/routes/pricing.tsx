@@ -96,9 +96,7 @@ function PricingPage() {
                   </span>
                 )}
               </div>
-              <p className="type-body-sm mt-1.5 text-muted-foreground">
-                {plan.intent}
-              </p>
+              <p className="type-body-sm mt-1.5 text-muted-foreground">{plan.intent}</p>
 
               <ul className="mt-6 flex-1 space-y-2.5">
                 {plan.features.map((f) => (
@@ -111,11 +109,7 @@ function PricingPage() {
 
               <Link
                 to="/signup"
-                className={buttonClass(
-                  plan.highlight ? "primary" : "outline",
-                  "md",
-                  "mt-7 w-full",
-                )}
+                className={buttonClass(plan.highlight ? "primary" : "outline", "md", "mt-7 w-full")}
               >
                 Começar teste de 14 dias
               </Link>
@@ -128,8 +122,14 @@ function PricingPage() {
         <dl className="grid gap-px overflow-hidden rounded-xl border border-border bg-border md:grid-cols-2">
           {[
             ["Preciso de cartão para testar?", "Não. O workspace é criado com 14 dias de teste."],
-            ["O Brain executa ações sozinho?", "Não. Toda ação exige aprovação explícita e fica registrada em auditoria."],
-            ["Meus dados ficam isolados?", "Sim. Cada workspace é isolado no banco por regras de acesso por linha."],
+            [
+              "O Brain executa ações sozinho?",
+              "Não. Toda ação exige aprovação explícita e fica registrada em auditoria.",
+            ],
+            [
+              "Meus dados ficam isolados?",
+              "Sim. Cada workspace é isolado no banco por regras de acesso por linha.",
+            ],
             ["Posso convidar meu time?", "Sim, com papéis e permissões definidos por pessoa."],
           ].map(([q, a]) => (
             <div key={q} className="bg-background p-5">

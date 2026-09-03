@@ -44,7 +44,108 @@ export interface SalesMetrics {
   ltv: number; // Receita / Clientes Únicos
 }
 
+export interface WorkspaceFinancialInput {
+  orders: Array<{
+    total_amount: number | null;
+    discount_amount?: number | null;
+    status?: string | null;
+    payment_gateway?: string | null;
+  }>;
+  campaigns: Array<{
+    budget: number | null;
+  }>;
+  fixedCosts: Array<{
+    amount: number | null;
+    active?: boolean | null;
+  }>;
+  orderItems?: Array<{
+    total_cost: number | null;
+  }>;
+  gatewayFees?: Array<{
+    gateway: string;
+    fee_percentage: number;
+    fixed_fee: number;
+    active?: boolean;
+  }>;
+  taxes?: Array<{
+    rate_percentage: number;
+    active?: boolean;
+  }>;
+  adMetricsDaily?: Array<{
+    spend: number;
+  }>;
+}
+
+export interface WorkspaceFinancialResult extends FinancialBreakdown {
+  hasConfiguredCogs: boolean;
+  hasConfiguredGatewayFees: boolean;
+  hasConfiguredTaxes: boolean;
+}
+
 export const MetricsEngine = {
+  /**
+   * Agregação Canônica a partir de dados reais do Workspace.
+   * Elimina estimativas hardcoded: valores não cadastrados resultam em 0 com alertas informativos.
+   */
+  calculateWorkspaceFinancials(input: WorkspaceFinancialInput): WorkspaceFinancialResult {
+    const grossRevenue = input.orders.reduce((acc, o) => acc + (o.total_amount || 0), 0);
+    const refundsAndDiscounts = input.orders.reduce(
+      (acc, o) =>
+        acc + (o.discount_amount || 0) + (o.status === "refunded" ? o.total_amount || 0 : 0),
+      0,
+    );
+
+    const hasConfiguredCogs = Boolean(input.orderItems && input.orderItems.length > 0);
+    const cogs = hasConfiguredCogs
+      ? input.orderItems!.reduce((acc, item) => acc + (item.total_cost || 0), 0)
+      : 0;
+
+    const activeGatewayFees = (input.gatewayFees || []).filter((f) => f.active !== false);
+    const hasConfiguredGatewayFees = activeGatewayFees.length > 0;
+    const gatewayFees = hasConfiguredGatewayFees
+      ? input.orders.reduce((acc, o) => {
+          const fee =
+            activeGatewayFees.find(
+              (f) => f.gateway.toLowerCase() === (o.payment_gateway || "").toLowerCase(),
+            ) || activeGatewayFees[0];
+          const feePct = (fee?.fee_percentage || 0) / 100;
+          const fixed = fee?.fixed_fee || 0;
+          return acc + (o.total_amount || 0) * feePct + fixed;
+        }, 0)
+      : 0;
+
+    const activeTaxes = (input.taxes || []).filter((t) => t.active !== false);
+    const hasConfiguredTaxes = activeTaxes.length > 0;
+    const totalTaxRate = activeTaxes.reduce((acc, t) => acc + (t.rate_percentage || 0), 0) / 100;
+    const taxes = hasConfiguredTaxes ? grossRevenue * totalTaxRate : 0;
+
+    const adSpend =
+      input.adMetricsDaily && input.adMetricsDaily.length > 0
+        ? input.adMetricsDaily.reduce((acc, m) => acc + (m.spend || 0), 0)
+        : input.campaigns.reduce((acc, c) => acc + (c.budget || 0), 0);
+
+    const fixedCosts = input.fixedCosts
+      .filter((fc) => fc.active !== false)
+      .reduce((acc, fc) => acc + (fc.amount || 0), 0);
+
+    const baseFinancials = this.calculateFinancials({
+      grossRevenue,
+      refundsAndDiscounts,
+      cogs,
+      gatewayFees,
+      taxes,
+      adSpend,
+      fixedCosts,
+    });
+
+    return {
+      ...baseFinancials,
+      hasConfiguredCogs,
+      hasConfiguredGatewayFees,
+      hasConfiguredTaxes,
+    };
+  },
+
   /**
    * Cálculo Canônico do Lucro Real e DRE Gerencial
    */
@@ -68,8 +169,7 @@ export const MetricsEngine = {
 
     const directVariableCosts = cogs + gatewayFees + taxes + adSpend;
     const contributionMargin = netRevenue - directVariableCosts;
-    const contributionMarginPercent =
-      netRevenue > 0 ? (contributionMargin / netRevenue) * 100 : 0;
+    const contributionMarginPercent = netRevenue > 0 ? (contributionMargin / netRevenue) * 100 : 0;
 
     const trueProfit = contributionMargin - fixedCosts;
     const realMarginPercent = grossRevenue > 0 ? (trueProfit / grossRevenue) * 100 : 0;
@@ -144,8 +244,7 @@ export const MetricsEngine = {
 
     const effectiveOrders = paidOrders > 0 ? paidOrders : totalOrders;
     const averageTicket = effectiveOrders > 0 ? grossRevenue / effectiveOrders : 0;
-    const conversionRate =
-      totalSessions > 0 ? (effectiveOrders / totalSessions) * 100 : 0;
+    const conversionRate = totalSessions > 0 ? (effectiveOrders / totalSessions) * 100 : 0;
     const ltv = totalCustomers > 0 ? grossRevenue / totalCustomers : 0;
 
     return {
@@ -162,11 +261,7 @@ export const MetricsEngine = {
   /**
    * Formatadores Padronizados de Moeda e Números
    */
-  formatCurrency(
-    amount: number,
-    currency = "BRL",
-    locale = "pt-BR",
-  ): string {
+  formatCurrency(amount: number, currency = "BRL", locale = "pt-BR"): string {
     const normalizedCurrency = currency.toUpperCase();
     return new Intl.NumberFormat(locale, {
       style: "currency",

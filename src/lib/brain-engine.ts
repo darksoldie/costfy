@@ -154,8 +154,7 @@ export const BrainEngine = {
           description: `Retorno sobre investimento em tráfego está em ${traffic.roas.toFixed(
             2,
           )}x, próximo ou abaixo do ponto de equilíbrio financeiro.`,
-          recommendation:
-            "Filtre campanhas com CTR abaixo de 1% para renovação de criativos.",
+          recommendation: "Filtre campanhas com CTR abaixo de 1% para renovação de criativos.",
           entityType: "campaign",
           createdAt: new Date().toISOString(),
         });
@@ -200,7 +199,12 @@ export const BrainEngine = {
 
     // 5. Geração de Propostas de Ações Prontas com Guardrails
     campaigns.forEach((camp) => {
-      if (camp.status === "active" && (camp.budget || 0) > 500 && traffic.roas < 1.2 && traffic.spend > 200) {
+      if (
+        camp.status === "active" &&
+        (camp.budget || 0) > 500 &&
+        traffic.roas < 1.2 &&
+        traffic.spend > 200
+      ) {
         proposals.push({
           id: `prop_pause_${camp.id}`,
           actionType: "pause_campaign",
@@ -265,7 +269,12 @@ export const BrainEngine = {
       )}** (Margem de **${MetricsEngine.formatPercent(financials.realMarginPercent)}**).`;
     }
 
-    if (text.includes("campanha") || text.includes("tráfego") || text.includes("roas") || text.includes("cpa")) {
+    if (
+      text.includes("campanha") ||
+      text.includes("tráfego") ||
+      text.includes("roas") ||
+      text.includes("cpa")
+    ) {
       if (traffic.spend === 0) {
         return "Nenhum investimento em mídia registrado até o momento. Conecte o Meta Ads, Google Ads ou TikTok Ads em Integrações para obter leituras de CPA, CTR e ROAS por criativo.";
       }

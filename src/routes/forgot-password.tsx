@@ -37,10 +37,9 @@ function ForgotPasswordPage() {
     event.preventDefault();
     setError(null);
     setLoading(true);
-    const { error: resetError } = await supabase.auth.resetPasswordForEmail(
-      email.trim(),
-      { redirectTo: `${window.location.origin}/reset-password` },
-    );
+    const { error: resetError } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
     setLoading(false);
     if (resetError) {
       setError(resetError.message);
@@ -62,8 +61,8 @@ function ForgotPasswordPage() {
       {sent ? (
         <div className="rounded-lg border border-border bg-surface p-4">
           <p className="type-body-sm text-muted-foreground">
-            Se houver uma conta para <strong className="text-foreground">{email.trim()}</strong>,
-            o link de redefinição chegará em instantes.
+            Se houver uma conta para <strong className="text-foreground">{email.trim()}</strong>, o
+            link de redefinição chegará em instantes.
           </p>
         </div>
       ) : (

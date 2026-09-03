@@ -28,7 +28,8 @@ export const Route = createFileRoute("/_authenticated/marketing")({
       { title: "Marketing & Campanhas — Costfy" },
       {
         name: "description",
-        content: "Acompanhe campanhas, conjuntos, anúncios e criativos com métricas consolidadas e ROAS real.",
+        content:
+          "Acompanhe campanhas, conjuntos, anúncios e criativos com métricas consolidadas e ROAS real.",
       },
     ],
   }),
@@ -139,64 +140,70 @@ function MarketingPage() {
       }
     >
       <div className="space-y-6">
-        {/* KPI Summary Bar */}
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 lg:grid-cols-6">
-          <div className="rounded-lg border border-border bg-card p-3.5">
-            <p className="type-caption text-muted-foreground">Campanhas Ativas</p>
-            <p className="type-numeric mt-1.5 text-xl font-semibold text-foreground">
-              {campaigns.filter((c) => c.status === "active").length}
-            </p>
-            <p className="text-[11px] text-subtle-foreground mt-0.5">de {campaigns.length} cadastradas</p>
-          </div>
-          <div className="rounded-lg border border-border bg-card p-3.5">
-            <p className="type-caption text-muted-foreground">Orçamento Diário Total</p>
-            <p className="type-numeric mt-1.5 text-xl font-semibold text-foreground">
-              {MetricsEngine.formatCurrency(totalSpend, active?.workspace.base_currency)}
-            </p>
-            <p className="text-[11px] text-subtle-foreground mt-0.5">consolidado</p>
-          </div>
-          <div className="rounded-lg border border-border bg-card p-3.5">
-            <p className="type-caption text-muted-foreground">ROAS Global</p>
-            <p className="type-numeric mt-1.5 text-xl font-semibold text-foreground">
-              {trafficMetrics.roas > 0 ? `${trafficMetrics.roas.toFixed(2)}x` : "—"}
-            </p>
-            <p className="text-[11px] text-subtle-foreground mt-0.5">calculado central</p>
-          </div>
-          <div className="rounded-lg border border-border bg-card p-3.5">
-            <p className="type-caption text-muted-foreground">CPA Médio</p>
-            <p className="type-numeric mt-1.5 text-xl font-semibold text-foreground">
-              {trafficMetrics.cpa > 0 ? MetricsEngine.formatCurrency(trafficMetrics.cpa) : "—"}
-            </p>
-            <p className="text-[11px] text-subtle-foreground mt-0.5">por conversão</p>
-          </div>
-          <div className="rounded-lg border border-border bg-card p-3.5">
-            <p className="type-caption text-muted-foreground">CTR Médio</p>
-            <p className="type-numeric mt-1.5 text-xl font-semibold text-foreground">
-              {trafficMetrics.ctr > 0 ? MetricsEngine.formatPercent(trafficMetrics.ctr) : "—"}
-            </p>
-            <p className="text-[11px] text-subtle-foreground mt-0.5">taxa de clique</p>
-          </div>
-          <div className="rounded-lg border border-border bg-card p-3.5">
-            <p className="type-caption text-muted-foreground">CPC Médio</p>
-            <p className="type-numeric mt-1.5 text-xl font-semibold text-foreground">
-              {trafficMetrics.cpc > 0 ? MetricsEngine.formatCurrency(trafficMetrics.cpc) : "—"}
-            </p>
-            <p className="text-[11px] text-subtle-foreground mt-0.5">custo por clique</p>
+        {/* KPI Summary Bar — Editorial Terminal Strip */}
+        <div className="editorial-card overflow-hidden">
+          <div className="grid grid-cols-1 divide-y divide-border sm:grid-cols-2 sm:divide-y-0 sm:divide-x lg:grid-cols-6">
+            <div className="p-4">
+              <span className="type-label-subtle">Campanhas Ativas</span>
+              <p className="type-metric-hero mt-1.5 text-foreground">
+                {campaigns.filter((c) => c.status === "active").length}
+              </p>
+              <p className="mt-1 text-[11.5px] text-muted-foreground">
+                de {campaigns.length} cadastradas
+              </p>
+            </div>
+            <div className="p-4">
+              <span className="type-label-subtle">Orçamento Total</span>
+              <p className="type-metric-hero mt-1.5 text-foreground">
+                {MetricsEngine.formatCurrency(totalSpend, active?.workspace.base_currency)}
+              </p>
+              <p className="mt-1 text-[11.5px] text-muted-foreground">consolidado</p>
+            </div>
+            <div className="p-4">
+              <span className="type-label-subtle">ROAS Global</span>
+              <p className="type-metric-hero mt-1.5 text-foreground">
+                {trafficMetrics.roas > 0 ? `${trafficMetrics.roas.toFixed(2)}x` : "—"}
+              </p>
+              <p className="mt-1 text-[11.5px] text-muted-foreground">calculado central</p>
+            </div>
+            <div className="p-4">
+              <span className="type-label-subtle">CPA Médio</span>
+              <p className="type-metric-hero mt-1.5 text-foreground">
+                {trafficMetrics.cpa > 0 ? MetricsEngine.formatCurrency(trafficMetrics.cpa) : "—"}
+              </p>
+              <p className="mt-1 text-[11.5px] text-muted-foreground">por conversão</p>
+            </div>
+            <div className="p-4">
+              <span className="type-label-subtle">CTR Médio</span>
+              <p className="type-metric-hero mt-1.5 text-foreground">
+                {trafficMetrics.ctr > 0 ? MetricsEngine.formatPercent(trafficMetrics.ctr) : "—"}
+              </p>
+              <p className="mt-1 text-[11.5px] text-muted-foreground">taxa de clique</p>
+            </div>
+            <div className="p-4">
+              <span className="type-label-subtle">CPC Médio</span>
+              <p className="type-metric-hero mt-1.5 text-foreground">
+                {trafficMetrics.cpc > 0 ? MetricsEngine.formatCurrency(trafficMetrics.cpc) : "—"}
+              </p>
+              <p className="mt-1 text-[11.5px] text-muted-foreground">custo por clique</p>
+            </div>
           </div>
         </div>
 
         {/* Abas de Navegação Hierárquica */}
         <div className="flex items-center gap-1 border-b border-border pb-1">
-          {[
-            { key: "campaigns", label: "Campanhas" },
-            { key: "ad_sets", label: "Conjuntos" },
-            { key: "ads", label: "Anúncios" },
-            { key: "creatives", label: "Criativos" },
-          ].map((item) => (
+          {(
+            [
+              { key: "campaigns", label: "Campanhas" },
+              { key: "ad_sets", label: "Conjuntos" },
+              { key: "ads", label: "Anúncios" },
+              { key: "creatives", label: "Criativos" },
+            ] as const
+          ).map((item) => (
             <button
               key={item.key}
               type="button"
-              onClick={() => setTab(item.key as any)}
+              onClick={() => setTab(item.key)}
               className={cn(
                 "rounded-md px-3 py-1.5 text-[13px] font-medium transition-colors",
                 tab === item.key
@@ -239,17 +246,18 @@ function MarketingPage() {
 
         {/* Tabela de Campanhas */}
         {isLoading ? (
-          <div className="space-y-2 rounded-lg border border-border p-6 bg-card">
+          <div className="space-y-2 editorial-card p-6 bg-card">
             {[1, 2, 3].map((i) => (
               <div key={i} className="h-12 w-full animate-pulse rounded bg-secondary/60" />
             ))}
           </div>
         ) : filteredCampaigns.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-border p-10 text-center bg-surface">
+          <div className="editorial-card p-10 text-center bg-surface/50">
             <Layers className="mx-auto size-8 text-muted-foreground" />
             <h3 className="type-h3 mt-3 text-foreground">Nenhuma campanha encontrada</h3>
             <p className="type-body-sm mx-auto mt-1 max-w-md text-muted-foreground">
-              Conecte sua conta de anúncios em Integrações para sincronização automática ou cadastre manualmente.
+              Conecte sua conta de anúncios em Integrações para sincronização automática ou cadastre
+              manualmente.
             </p>
             <div className="mt-4 flex justify-center gap-2">
               <button
@@ -262,9 +270,9 @@ function MarketingPage() {
             </div>
           </div>
         ) : (
-          <div className="overflow-hidden rounded-lg border border-border bg-card">
+          <div className="editorial-card overflow-hidden">
             <table className="w-full text-left text-[13px]">
-              <thead className="border-b border-border bg-surface text-[12px] font-semibold text-muted-foreground uppercase tracking-wider">
+              <thead className="border-b border-border bg-secondary/50 text-[11px] font-semibold text-muted-foreground uppercase tracking-wider">
                 <tr>
                   <th className="px-4 py-3">Status</th>
                   <th className="px-4 py-3">Campanha</th>
@@ -295,9 +303,7 @@ function MarketingPage() {
                         {camp.status === "active" ? "Ativa" : "Pausada"}
                       </span>
                     </td>
-                    <td className="px-4 py-3 font-medium text-foreground">
-                      {camp.name}
-                    </td>
+                    <td className="px-4 py-3 font-medium text-foreground">{camp.name}</td>
                     <td className="px-4 py-3 text-muted-foreground capitalize">
                       {camp.platform.replace("_", " ")}
                     </td>
@@ -310,7 +316,9 @@ function MarketingPage() {
                     <td className="px-4 py-3 text-right">
                       <button
                         type="button"
-                        onClick={() => toggleStatus.mutate({ id: camp.id, currentStatus: camp.status })}
+                        onClick={() =>
+                          toggleStatus.mutate({ id: camp.id, currentStatus: camp.status })
+                        }
                         disabled={toggleStatus.isPending}
                         className={buttonClass("outline", "sm", "h-7 text-[12px] gap-1")}
                       >

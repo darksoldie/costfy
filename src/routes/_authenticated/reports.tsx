@@ -1,15 +1,7 @@
 import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import {
-  FileText,
-  Download,
-  Printer,
-  Calendar,
-  Layers,
-  Sparkles,
-  TrendingUp,
-} from "lucide-react";
+import { FileText, Download, Printer, Calendar, Layers, Sparkles, TrendingUp } from "lucide-react";
 
 import { AppShell } from "@/components/app/app-shell";
 import { WorkspaceProvider, useWorkspace } from "@/components/app/workspace-context";
@@ -18,6 +10,10 @@ import {
   campaignsQuery,
   productsQuery,
   fixedCostsQuery,
+  orderItemsQuery,
+  gatewayFeesQuery,
+  taxesQuery,
+  adMetricsDailyQuery,
 } from "@/lib/business-data";
 import { MetricsEngine } from "@/lib/metrics-engine";
 import { buttonClass } from "@/lib/ui";
@@ -47,26 +43,32 @@ function ReportsPage() {
   const { data: orders = [] } = useQuery(ordersQuery(workspaceId));
   const { data: campaigns = [] } = useQuery(campaignsQuery(workspaceId));
   const { data: fixedCosts = [] } = useQuery(fixedCostsQuery(workspaceId));
+  const { data: orderItems = [] } = useQuery(orderItemsQuery(workspaceId));
+  const { data: gatewayFees = [] } = useQuery(gatewayFeesQuery(workspaceId));
+  const { data: taxes = [] } = useQuery(taxesQuery(workspaceId));
+  const { data: adMetrics = [] } = useQuery(adMetricsDailyQuery(workspaceId));
 
   const [reportType, setReportType] = useState<"executive" | "dre" | "traffic">("executive");
 
   const grossRevenue = orders.reduce((acc, o) => acc + (o.total_amount || 0), 0);
-  const totalSpend = campaigns.reduce((acc, c) => acc + (c.budget || 0), 0);
-  const totalFixed = fixedCosts.reduce((acc, fc) => acc + (fc.amount || 0), 0);
 
-  const dre = MetricsEngine.calculateFinancials({
-    grossRevenue,
-    cogs: orders.length * 25,
-    gatewayFees: grossRevenue * 0.0399,
-    taxes: grossRevenue * 0.06,
-    adSpend: totalSpend,
-    fixedCosts: totalFixed,
+  const dre = MetricsEngine.calculateWorkspaceFinancials({
+    orders,
+    campaigns,
+    fixedCosts,
+    orderItems,
+    gatewayFees,
+    taxes,
+    adMetricsDaily: adMetrics,
   });
 
+  const totalImpressions = adMetrics.reduce((acc, m) => acc + (m.impressions || 0), 0);
+  const totalClicks = adMetrics.reduce((acc, m) => acc + (m.clicks || 0), 0);
+
   const traffic = MetricsEngine.calculateTraffic({
-    impressions: 0,
-    clicks: 0,
-    spend: totalSpend,
+    impressions: totalImpressions,
+    clicks: totalClicks,
+    spend: dre.adSpend,
     conversions: orders.length,
     revenue: grossRevenue,
   });
@@ -93,15 +95,17 @@ function ReportsPage() {
       <div className="space-y-6">
         {/* Seleção de Relatório */}
         <div className="flex items-center gap-2 border-b border-border pb-3">
-          {[
-            { key: "executive", label: "Relatório Executivo Geral" },
-            { key: "dre", label: "DRE Contábil & Gerencial" },
-            { key: "traffic", label: "Performance de Mídia & ROAS" },
-          ].map((item) => (
+          {(
+            [
+              { key: "executive", label: "Relatório Executivo Geral" },
+              { key: "dre", label: "DRE Contábil & Gerencial" },
+              { key: "traffic", label: "Performance de Mídia & ROAS" },
+            ] as const
+          ).map((item) => (
             <button
               key={item.key}
               type="button"
-              onClick={() => setReportType(item.key as any)}
+              onClick={() => setReportType(item.key)}
               className={cn(
                 "rounded-md px-3 py-1.5 text-[13px] font-medium transition-colors",
                 reportType === item.key
@@ -126,12 +130,12 @@ function ReportsPage() {
                 {reportType === "executive"
                   ? "Relatório Executivo Consolidado"
                   : reportType === "dre"
-                  ? "Demonstrativo de Resultado do Exercício (DRE)"
-                  : "Relatório de Performance de Tráfego e Mídia"}
+                    ? "Demonstrativo de Resultado do Exercício (DRE)"
+                    : "Relatório de Performance de Tráfego e Mídia"}
               </h2>
               <p className="text-[13px] text-muted-foreground mt-0.5">
-                Workspace: <strong className="text-foreground">{active?.workspace.name}</strong> • Moeda:{" "}
-                <span className="font-mono">{active?.workspace.base_currency || "BRL"}</span>
+                Workspace: <strong className="text-foreground">{active?.workspace.name}</strong> •
+                Moeda: <span className="font-mono">{active?.workspace.base_currency || "BRL"}</span>
               </p>
             </div>
             <div className="text-right text-[12px] text-muted-foreground">
@@ -181,7 +185,10 @@ function ReportsPage() {
                 <tr className="font-semibold text-foreground bg-card">
                   <td className="px-4 py-2.5">(+) Receita Bruta</td>
                   <td className="px-4 py-2.5 text-right type-numeric">
-                    {MetricsEngine.formatCurrency(dre.grossRevenue, active?.workspace.base_currency)}
+                    {MetricsEngine.formatCurrency(
+                      dre.grossRevenue,
+                      active?.workspace.base_currency,
+                    )}
                   </td>
                   <td className="px-4 py-2.5 text-right type-numeric">100,0%</td>
                 </tr>
@@ -191,7 +198,9 @@ function ReportsPage() {
                     {MetricsEngine.formatCurrency(dre.cogs, active?.workspace.base_currency)}
                   </td>
                   <td className="px-4 py-2.5 text-right type-numeric">
-                    {dre.grossRevenue > 0 ? MetricsEngine.formatPercent((dre.cogs / dre.grossRevenue) * 100) : "0%"}
+                    {dre.grossRevenue > 0
+                      ? MetricsEngine.formatPercent((dre.cogs / dre.grossRevenue) * 100)
+                      : "0%"}
                   </td>
                 </tr>
                 <tr className="text-muted-foreground">
@@ -200,7 +209,9 @@ function ReportsPage() {
                     {MetricsEngine.formatCurrency(dre.gatewayFees, active?.workspace.base_currency)}
                   </td>
                   <td className="px-4 py-2.5 text-right type-numeric">
-                    {dre.grossRevenue > 0 ? MetricsEngine.formatPercent((dre.gatewayFees / dre.grossRevenue) * 100) : "0%"}
+                    {dre.grossRevenue > 0
+                      ? MetricsEngine.formatPercent((dre.gatewayFees / dre.grossRevenue) * 100)
+                      : "0%"}
                   </td>
                 </tr>
                 <tr className="text-muted-foreground">
@@ -209,7 +220,9 @@ function ReportsPage() {
                     {MetricsEngine.formatCurrency(dre.taxes, active?.workspace.base_currency)}
                   </td>
                   <td className="px-4 py-2.5 text-right type-numeric">
-                    {dre.grossRevenue > 0 ? MetricsEngine.formatPercent((dre.taxes / dre.grossRevenue) * 100) : "0%"}
+                    {dre.grossRevenue > 0
+                      ? MetricsEngine.formatPercent((dre.taxes / dre.grossRevenue) * 100)
+                      : "0%"}
                   </td>
                 </tr>
                 <tr className="text-muted-foreground">
@@ -218,7 +231,9 @@ function ReportsPage() {
                     {MetricsEngine.formatCurrency(dre.adSpend, active?.workspace.base_currency)}
                   </td>
                   <td className="px-4 py-2.5 text-right type-numeric">
-                    {dre.grossRevenue > 0 ? MetricsEngine.formatPercent((dre.adSpend / dre.grossRevenue) * 100) : "0%"}
+                    {dre.grossRevenue > 0
+                      ? MetricsEngine.formatPercent((dre.adSpend / dre.grossRevenue) * 100)
+                      : "0%"}
                   </td>
                 </tr>
                 <tr className="text-muted-foreground">
@@ -227,7 +242,9 @@ function ReportsPage() {
                     {MetricsEngine.formatCurrency(dre.fixedCosts, active?.workspace.base_currency)}
                   </td>
                   <td className="px-4 py-2.5 text-right type-numeric">
-                    {dre.grossRevenue > 0 ? MetricsEngine.formatPercent((dre.fixedCosts / dre.grossRevenue) * 100) : "0%"}
+                    {dre.grossRevenue > 0
+                      ? MetricsEngine.formatPercent((dre.fixedCosts / dre.grossRevenue) * 100)
+                      : "0%"}
                   </td>
                 </tr>
                 <tr className="font-bold text-[14px] bg-secondary/50 text-foreground">
@@ -254,7 +271,8 @@ function ReportsPage() {
           </div>
 
           <div className="text-[11px] text-muted-foreground text-center border-t border-border pt-4">
-            Costfy — Intelligent Operating System for Digital Businesses • Documento gerado com dados auditados do workspace.
+            Costfy — Intelligent Operating System for Digital Businesses • Documento gerado com
+            dados auditados do workspace.
           </div>
         </div>
       </div>

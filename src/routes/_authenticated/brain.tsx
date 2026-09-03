@@ -23,6 +23,10 @@ import {
   campaignsQuery,
   productsQuery,
   fixedCostsQuery,
+  orderItemsQuery,
+  gatewayFeesQuery,
+  taxesQuery,
+  adMetricsDailyQuery,
 } from "@/lib/business-data";
 import { BrainEngine, type BrainInsight, type BrainActionProposal } from "@/lib/brain-engine";
 import { ActionEngine } from "@/lib/action-engine";
@@ -36,7 +40,8 @@ export const Route = createFileRoute("/_authenticated/brain")({
       { title: "Costfy Brain Hub — Inteligência Operacional" },
       {
         name: "description",
-        content: "O núcleo de inteligência do seu negócio digital: diagnósticos em tempo real, insights acionáveis e ações com aprovação humana.",
+        content:
+          "O núcleo de inteligência do seu negócio digital: diagnósticos em tempo real, insights acionáveis e ações com aprovação humana.",
       },
     ],
   }),
@@ -62,29 +67,35 @@ function BrainPage() {
   const { data: campaigns = [] } = useQuery(campaignsQuery(workspaceId));
   const { data: products = [] } = useQuery(productsQuery(workspaceId));
   const { data: fixedCosts = [] } = useQuery(fixedCostsQuery(workspaceId));
+  const { data: orderItems = [] } = useQuery(orderItemsQuery(workspaceId));
+  const { data: gatewayFees = [] } = useQuery(gatewayFeesQuery(workspaceId));
+  const { data: taxes = [] } = useQuery(taxesQuery(workspaceId));
+  const { data: adMetrics = [] } = useQuery(adMetricsDailyQuery(workspaceId));
 
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [executedActions, setExecutedActions] = useState<Record<string, boolean>>({});
 
-  // Cálculo financeiro e de tráfego real
+  // Cálculo financeiro e de tráfego canônico e verídico
   const grossRevenue = orders.reduce((acc, o) => acc + (o.total_amount || 0), 0);
-  const totalAdSpend = campaigns.reduce((acc, c) => acc + (c.budget || 0), 0);
-  const totalFixed = fixedCosts.reduce((acc, fc) => acc + (fc.amount || 0), 0);
 
-  const financials = MetricsEngine.calculateFinancials({
-    grossRevenue,
-    cogs: orders.length * 25,
-    gatewayFees: grossRevenue * 0.0399,
-    taxes: grossRevenue * 0.06,
-    adSpend: totalAdSpend,
-    fixedCosts: totalFixed,
+  const financials = MetricsEngine.calculateWorkspaceFinancials({
+    orders,
+    campaigns,
+    fixedCosts,
+    orderItems,
+    gatewayFees,
+    taxes,
+    adMetricsDaily: adMetrics,
   });
 
+  const totalImpressions = adMetrics.reduce((acc, m) => acc + (m.impressions || 0), 0);
+  const totalClicks = adMetrics.reduce((acc, m) => acc + (m.clicks || 0), 0);
+
   const traffic = MetricsEngine.calculateTraffic({
-    impressions: 0,
-    clicks: 0,
-    spend: totalAdSpend,
+    impressions: totalImpressions,
+    clicks: totalClicks,
+    spend: financials.adSpend,
     conversions: orders.length,
     revenue: grossRevenue,
   });
@@ -158,13 +169,13 @@ function BrainPage() {
       const res = await ActionEngine.executeApprovedAction({
         workspaceId: active.workspace.id,
         proposal: prop,
-        userId: active.role,
       });
       if (res.success) {
         setExecutedActions((prev) => ({ ...prev, [prop.id]: true }));
       }
-    } catch (err: any) {
-      alert(err?.message || "Erro ao executar ação");
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Erro ao executar ação";
+      alert(message);
     }
   }
 
@@ -175,13 +186,15 @@ function BrainPage() {
     >
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
         {/* Coluna Esquerda: Chat Interativo (7 colunas) */}
-        <section className="flex flex-col rounded-xl border border-border bg-card lg:col-span-7 h-[700px] overflow-hidden">
-          <header className="flex items-center justify-between border-b border-border bg-surface px-5 py-3.5">
+        <section className="editorial-card flex flex-col lg:col-span-7 h-[700px] overflow-hidden">
+          <header className="flex items-center justify-between border-b border-border bg-secondary/40 px-5 py-3.5">
             <div className="flex items-center gap-2.5">
               <CostfyMark size={20} state={loading ? "thinking" : "idle"} className="text-accent" />
               <div>
                 <h3 className="text-[14px] font-semibold text-foreground">Brain Copilot</h3>
-                <p className="text-[11px] text-muted-foreground">Sessão operacional ativa</p>
+                <p className="text-[11px] text-muted-foreground">
+                  Sessão operacional contextualizada com dados reais
+                </p>
               </div>
             </div>
             <div className="flex items-center gap-2">
@@ -198,17 +211,19 @@ function BrainPage() {
               <div
                 key={msg.id}
                 className={cn(
-                  "flex flex-col max-w-[85%] rounded-xl p-3.5 text-[13.5px] leading-relaxed",
+                  "flex flex-col max-w-[85%] rounded-lg p-3.5 text-[13.5px] leading-relaxed",
                   msg.sender === "user"
                     ? "ml-auto bg-primary text-primary-foreground rounded-br-none"
-                    : "mr-auto bg-secondary/80 text-foreground border border-border/70 rounded-bl-none",
+                    : "mr-auto bg-surface text-foreground border border-border rounded-bl-none",
                 )}
               >
                 <div className="whitespace-pre-wrap">{msg.text}</div>
                 <span
                   className={cn(
                     "mt-1.5 text-[10px]",
-                    msg.sender === "user" ? "text-primary-foreground/70 text-right" : "text-subtle-foreground",
+                    msg.sender === "user"
+                      ? "text-primary-foreground/70 text-right"
+                      : "text-muted-foreground",
                   )}
                 >
                   {msg.timestamp}
@@ -217,7 +232,7 @@ function BrainPage() {
             ))}
 
             {loading && (
-              <div className="mr-auto flex items-center gap-2.5 rounded-xl border border-accent/30 bg-accent/5 p-3.5 text-[13px] text-foreground">
+              <div className="mr-auto flex items-center gap-2.5 rounded-lg border border-accent/30 bg-accent/5 p-3.5 text-[13px] text-foreground">
                 <CostfyMark size={16} state="thinking" className="text-accent" />
                 <span>Analisando base de dados e preparando resposta…</span>
               </div>
@@ -225,22 +240,22 @@ function BrainPage() {
           </div>
 
           {/* Input de Mensagem */}
-          <form onSubmit={handleSend} className="border-t border-border p-3.5 bg-surface">
+          <form onSubmit={handleSend} className="border-t border-border p-3.5 bg-surface/60">
             <div className="relative flex items-center">
               <input
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 placeholder="Pergunte sobre margem, campanhas, lucros ou peça uma recomendação…"
-                className="h-11 w-full rounded-lg border border-border bg-background pl-4 pr-12 text-[14px] text-foreground placeholder:text-subtle-foreground focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/15"
+                className="h-11 w-full rounded-md border border-border bg-background pl-4 pr-12 text-[13.5px] text-foreground placeholder:text-muted-foreground focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
               />
               <button
                 type="submit"
                 disabled={!input.trim() || loading}
                 aria-label="Enviar mensagem ao Brain"
-                className="absolute right-2 grid size-8 place-items-center rounded-md bg-accent text-accent-foreground disabled:opacity-40 transition-opacity hover:bg-accent/90"
+                className="absolute right-2 grid size-7 place-items-center rounded bg-accent text-accent-foreground disabled:opacity-40 transition-opacity hover:bg-accent/90"
               >
-                <Send className="size-4" />
+                <Send className="size-3.5" />
               </button>
             </div>
           </form>
@@ -249,21 +264,28 @@ function BrainPage() {
         {/* Coluna Direita: Insights, Recomendações e Ações (5 colunas) */}
         <section className="space-y-5 lg:col-span-5">
           {/* Health Score do Negócio */}
-          <div className="rounded-xl border border-border bg-card p-5">
+          <div className="editorial-card p-5">
             <div className="flex items-center justify-between">
               <div>
-                <p className="type-caption text-muted-foreground">Health Score da Operação</p>
-                <h4 className="type-h2 mt-1 text-foreground">{healthScore} / 100</h4>
+                <span className="type-label-subtle">Health Score da Operação</span>
+                <p className="type-metric-hero mt-1.5 text-foreground">
+                  {healthScore}{" "}
+                  <span className="text-[14px] text-muted-foreground font-normal">/ 100</span>
+                </p>
               </div>
-              <div className="grid size-12 place-items-center rounded-full bg-accent/10 text-accent">
-                <Activity className="size-6" />
+              <div className="grid size-10 place-items-center rounded-md border border-border bg-secondary text-accent">
+                <Activity className="size-5" />
               </div>
             </div>
-            <div className="mt-3 h-2 w-full overflow-hidden rounded-full bg-secondary">
+            <div className="mt-3.5 h-1.5 w-full overflow-hidden rounded-full bg-secondary">
               <div
                 className={cn(
                   "h-full rounded-full transition-all duration-500",
-                  healthScore >= 75 ? "bg-success" : healthScore >= 50 ? "bg-warning" : "bg-destructive",
+                  healthScore >= 75
+                    ? "bg-success"
+                    : healthScore >= 50
+                      ? "bg-warning"
+                      : "bg-destructive",
                 )}
                 style={{ width: `${healthScore}%` }}
               />
@@ -271,39 +293,47 @@ function BrainPage() {
           </div>
 
           {/* Insights Ativos */}
-          <div className="rounded-xl border border-border bg-card p-5 space-y-3.5">
+          <div className="editorial-card p-5 space-y-3.5">
             <div className="flex items-center justify-between">
               <h4 className="text-[14px] font-semibold text-foreground flex items-center gap-2">
                 <Sparkles className="size-4 text-accent" />
                 Insights e Diagnósticos
               </h4>
-              <span className="text-[11px] text-muted-foreground font-mono">{insights.length} ativo(s)</span>
+              <span className="text-[11px] text-muted-foreground font-mono">
+                {insights.length} ativo(s)
+              </span>
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-2.5">
               {insights.map((ins) => (
                 <div
                   key={ins.id}
                   className={cn(
-                    "rounded-lg border p-3.5 text-[13px] space-y-1.5 transition-colors",
+                    "rounded-md border p-3.5 text-[13px] space-y-1.5 transition-colors",
                     ins.severity === "critical"
                       ? "border-destructive/30 bg-destructive/[0.04]"
                       : ins.severity === "warning"
-                      ? "border-warning/30 bg-warning/[0.04]"
-                      : ins.severity === "success"
-                      ? "border-success/30 bg-success/[0.04]"
-                      : "border-border bg-surface/50",
+                        ? "border-warning/30 bg-warning/[0.04]"
+                        : ins.severity === "success"
+                          ? "border-success/30 bg-success/[0.04]"
+                          : "border-border bg-surface/50",
                   )}
                 >
-                  <p className="font-semibold text-foreground flex items-center gap-1.5">
-                    {ins.severity === "critical" && <AlertTriangle className="size-3.5 text-destructive" />}
-                    {ins.severity === "warning" && <AlertTriangle className="size-3.5 text-warning" />}
+                  <p className="font-semibold text-foreground flex items-center gap-1.5 text-[13px]">
+                    {ins.severity === "critical" && (
+                      <AlertTriangle className="size-3.5 text-destructive" />
+                    )}
+                    {ins.severity === "warning" && (
+                      <AlertTriangle className="size-3.5 text-warning" />
+                    )}
                     {ins.severity === "success" && <TrendingUp className="size-3.5 text-success" />}
                     {ins.title}
                   </p>
-                  <p className="text-muted-foreground text-[12.5px] leading-relaxed">{ins.description}</p>
+                  <p className="text-muted-foreground text-[12px] leading-relaxed">
+                    {ins.description}
+                  </p>
                   {ins.recommendation && (
-                    <p className="text-[12px] font-medium text-foreground pt-1 border-t border-border/50">
+                    <p className="text-[11.5px] font-medium text-foreground pt-1.5 border-t border-border/50">
                       💡 Recomendação: {ins.recommendation}
                     </p>
                   )}
@@ -314,7 +344,7 @@ function BrainPage() {
 
           {/* Ações Preparadas para Aprovação */}
           {proposals.length > 0 && (
-            <div className="rounded-xl border border-border bg-card p-5 space-y-3.5">
+            <div className="editorial-card p-5 space-y-3.5">
               <div className="flex items-center justify-between">
                 <h4 className="text-[14px] font-semibold text-foreground flex items-center gap-2">
                   <ShieldCheck className="size-4 text-primary" />
@@ -326,10 +356,15 @@ function BrainPage() {
                 {proposals.map((prop) => {
                   const isDone = executedActions[prop.id];
                   return (
-                    <div key={prop.id} className="rounded-lg border border-border bg-surface p-3.5 space-y-3 text-[13px]">
+                    <div
+                      key={prop.id}
+                      className="rounded-md border border-border bg-surface/60 p-3.5 space-y-3 text-[13px]"
+                    >
                       <div>
                         <div className="flex items-center justify-between">
-                          <span className="font-semibold text-foreground">{prop.title}</span>
+                          <span className="font-semibold text-foreground text-[13px]">
+                            {prop.title}
+                          </span>
                           <span className="rounded bg-secondary px-2 py-0.5 text-[10px] font-medium uppercase text-muted-foreground border border-border">
                             Risco {prop.riskLevel}
                           </span>
@@ -338,20 +373,28 @@ function BrainPage() {
                       </div>
 
                       {/* Action Preview Diff */}
-                      <div className="rounded-md border border-border/80 bg-background p-2.5 font-mono text-[11.5px] space-y-1">
-                        <div className="text-muted-foreground">Anterior: {prop.preview.current}</div>
-                        <div className="text-primary font-semibold">Proposto: {prop.preview.proposed}</div>
+                      <div className="rounded border border-border/80 bg-background p-2.5 font-mono text-[11px] space-y-1">
+                        <div className="text-muted-foreground">
+                          Anterior: {prop.preview.current}
+                        </div>
+                        <div className="text-primary font-semibold">
+                          Proposto: {prop.preview.proposed}
+                        </div>
                       </div>
 
                       <div className="flex items-center justify-between pt-1">
-                        <span className="text-[11px] text-subtle-foreground flex items-center gap-1">
+                        <span className="text-[11px] text-muted-foreground flex items-center gap-1">
                           <ShieldCheck className="size-3 text-success" /> Guardrails verificados
                         </span>
                         <button
                           type="button"
                           disabled={isDone}
                           onClick={() => handleApprove(prop)}
-                          className={buttonClass(isDone ? "outline" : "primary", "sm", "h-7 text-[12px] gap-1")}
+                          className={buttonClass(
+                            isDone ? "outline" : "primary",
+                            "sm",
+                            "h-7 text-[11.5px] gap-1 shadow-none",
+                          )}
                         >
                           {isDone ? (
                             <>
