@@ -4,22 +4,22 @@ import { useState, type FormEvent } from "react";
 import { AppShell } from "@/components/app/app-shell";
 import { WorkspaceProvider } from "@/components/app/workspace-context";
 import { TextField } from "@/components/ui-kit/text-field";
-import { buttonClass, inputClass } from "@/lib/ui";
+import { buttonClass, inputClass, selectClass } from "@/lib/ui";
 import { useCreateWorkspace, type BusinessType } from "@/lib/workspaces";
 
 export const Route = createFileRoute("/_authenticated/onboarding")({
   head: () => ({
     meta: [
-      { title: "Criar workspace — Costfy" },
+      { title: "Configurar Workspace — Costfy" },
       {
         name: "description",
         content:
-          "Configure seu workspace no Costfy: nome do negócio e tipo de operação para calibrar o Brain.",
+          "Inicialize o ambiente operacional do seu negócio digital: configure o nome e o modelo de negócio para calibrar o Costfy Brain.",
       },
-      { property: "og:title", content: "Criar workspace — Costfy" },
+      { property: "og:title", content: "Configurar Workspace — Costfy" },
       {
         property: "og:description",
-        content: "Configure o contexto do seu negócio em menos de um minuto.",
+        content: "Inicialize o ambiente operacional do seu negócio digital.",
       },
     ],
   }),
@@ -31,14 +31,14 @@ export const Route = createFileRoute("/_authenticated/onboarding")({
 });
 
 const BUSINESS_TYPES: ReadonlyArray<{ value: BusinessType; label: string }> = [
-  { value: "ecommerce", label: "E-commerce" },
-  { value: "saas", label: "SaaS" },
-  { value: "infoproduct", label: "Infoproduto" },
-  { value: "affiliate", label: "Afiliado" },
-  { value: "agency", label: "Agência" },
-  { value: "creator", label: "Criador de conteúdo" },
-  { value: "freelancer", label: "Freelancer" },
-  { value: "other", label: "Outro" },
+  { value: "ecommerce", label: "E-commerce & D2C" },
+  { value: "saas", label: "SaaS & Software" },
+  { value: "infoproduct", label: "Infoproduto & Cursos" },
+  { value: "affiliate", label: "Afiliado Profissional" },
+  { value: "agency", label: "Agência de Performance" },
+  { value: "creator", label: "Criador de Conteúdo" },
+  { value: "freelancer", label: "Serviços Digitais" },
+  { value: "other", label: "Outro Modelo Digital" },
 ];
 
 function OnboardingPage() {
@@ -59,51 +59,62 @@ function OnboardingPage() {
 
   return (
     <AppShell
-      title="Criar workspace"
-      description="O tipo de negócio calibra métricas e leituras do Brain."
+      title="Configuração do Workspace"
+      description="Inicialize o ambiente operacional do seu negócio digital."
     >
-      <form onSubmit={handleSubmit} className="max-w-lg space-y-5" noValidate>
-        <TextField
-          label="Nome do negócio"
-          required
-          value={name}
-          onChange={(event) => setName(event.target.value)}
-          placeholder="Ex.: Loja Aurora"
-          hint="Você poderá renomear depois."
-        />
+      <div className="max-w-xl mx-auto pt-4 sm:pt-8">
+        <div className="editorial-card p-6 sm:p-8 space-y-6 shadow-[var(--shadow-raised)]">
+          <div className="space-y-1.5 border-b border-border pb-4">
+            <h2 className="type-h2 text-foreground">Novo Workspace</h2>
+            <p className="type-body-sm text-muted-foreground">
+              O tipo de negócio calibra os diagnósticos, taxas padrão e guardrails de automação do Costfy Brain.
+            </p>
+          </div>
 
-        <div className="space-y-1.5">
-          <label htmlFor="business-type" className="block text-[13px] font-medium text-foreground">
-            Tipo de negócio
-          </label>
-          <select
-            id="business-type"
-            value={businessType}
-            onChange={(event) => setBusinessType(event.target.value as BusinessType)}
-            className={inputClass}
-          >
-            {BUSINESS_TYPES.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
+          <form onSubmit={handleSubmit} className="space-y-5" noValidate>
+            <TextField
+              label="Nome do negócio ou operação"
+              required
+              value={name}
+              onChange={(event) => setName(event.target.value)}
+              placeholder="Ex.: Aurora Digital / Operação Alpha"
+              hint="Identificador do seu workspace corporativo. Editável a qualquer momento."
+            />
+
+            <div className="space-y-1.5">
+              <label htmlFor="business-type" className="block text-[13px] font-medium text-foreground">
+                Tipo de operação
+              </label>
+              <select
+                id="business-type"
+                value={businessType}
+                onChange={(event) => setBusinessType(event.target.value as BusinessType)}
+                className={selectClass}
+              >
+                {BUSINESS_TYPES.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {createWorkspace.error instanceof Error && (
+              <p role="alert" className="text-[12.5px] text-destructive bg-destructive/5 p-3 rounded-md border border-destructive/20">
+                {createWorkspace.error.message}
+              </p>
+            )}
+
+            <button
+              type="submit"
+              disabled={createWorkspace.isPending || !name.trim()}
+              className={buttonClass("primary", "lg", "w-full mt-2")}
+            >
+              {createWorkspace.isPending ? "Configurando ambiente…" : "Inicializar Workspace"}
+            </button>
+          </form>
         </div>
-
-        {createWorkspace.error instanceof Error && (
-          <p role="alert" className="text-[12.5px] text-destructive">
-            {createWorkspace.error.message}
-          </p>
-        )}
-
-        <button
-          type="submit"
-          disabled={createWorkspace.isPending}
-          className={buttonClass("primary", "lg", "w-full")}
-        >
-          {createWorkspace.isPending ? "Criando…" : "Criar workspace"}
-        </button>
-      </form>
+      </div>
     </AppShell>
   );
 }

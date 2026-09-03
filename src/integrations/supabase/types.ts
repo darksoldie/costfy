@@ -1877,6 +1877,336 @@ export type Database = {
           },
         ];
       };
+      plans: {
+        Row: {
+          id: string;
+          slug: string;
+          name: string;
+          description: string | null;
+          monthly_price: number;
+          annual_price: number;
+          currency: string;
+          is_public: boolean;
+          is_active: boolean;
+          display_order: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          slug: string;
+          name: string;
+          description?: string | null;
+          monthly_price?: number;
+          annual_price?: number;
+          currency?: string;
+          is_public?: boolean;
+          is_active?: boolean;
+          display_order?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          slug?: string;
+          name?: string;
+          description?: string | null;
+          monthly_price?: number;
+          annual_price?: number;
+          currency?: string;
+          is_public?: boolean;
+          is_active?: boolean;
+          display_order?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
+      plan_entitlements: {
+        Row: {
+          id: string;
+          plan_id: string;
+          feature_key: string;
+          enabled: boolean;
+          config: Json;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          plan_id: string;
+          feature_key: string;
+          enabled?: boolean;
+          config?: Json;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          plan_id?: string;
+          feature_key?: string;
+          enabled?: boolean;
+          config?: Json;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "plan_entitlements_plan_id_fkey";
+            columns: ["plan_id"];
+            isOneToOne: false;
+            referencedRelation: "plans";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      plan_limits: {
+        Row: {
+          id: string;
+          plan_id: string;
+          resource_key: string;
+          limit_value: number;
+          period: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          plan_id: string;
+          resource_key: string;
+          limit_value?: number;
+          period?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          plan_id?: string;
+          resource_key?: string;
+          limit_value?: number;
+          period?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "plan_limits_plan_id_fkey";
+            columns: ["plan_id"];
+            isOneToOne: false;
+            referencedRelation: "plans";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      billing_customers: {
+        Row: {
+          id: string;
+          workspace_id: string;
+          provider: string;
+          provider_customer_id: string;
+          email: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          workspace_id: string;
+          provider?: string;
+          provider_customer_id: string;
+          email: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          workspace_id?: string;
+          provider?: string;
+          provider_customer_id?: string;
+          email?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "billing_customers_workspace_id_fkey";
+            columns: ["workspace_id"];
+            isOneToOne: false;
+            referencedRelation: "workspaces";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      subscriptions: {
+        Row: {
+          id: string;
+          workspace_id: string;
+          plan_id: string;
+          provider: string;
+          provider_customer_id: string | null;
+          provider_subscription_id: string | null;
+          status: Database["public"]["Enums"]["subscription_status"];
+          billing_interval: Database["public"]["Enums"]["plan_interval"];
+          trial_started_at: string | null;
+          trial_ends_at: string | null;
+          current_period_start: string;
+          current_period_end: string;
+          cancel_at_period_end: boolean;
+          canceled_at: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          workspace_id: string;
+          plan_id: string;
+          provider?: string;
+          provider_customer_id?: string | null;
+          provider_subscription_id?: string | null;
+          status?: Database["public"]["Enums"]["subscription_status"];
+          billing_interval?: Database["public"]["Enums"]["plan_interval"];
+          trial_started_at?: string | null;
+          trial_ends_at?: string | null;
+          current_period_start?: string;
+          current_period_end?: string;
+          cancel_at_period_end?: boolean;
+          canceled_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          workspace_id?: string;
+          plan_id?: string;
+          provider?: string;
+          provider_customer_id?: string | null;
+          provider_subscription_id?: string | null;
+          status?: Database["public"]["Enums"]["subscription_status"];
+          billing_interval?: Database["public"]["Enums"]["plan_interval"];
+          trial_started_at?: string | null;
+          trial_ends_at?: string | null;
+          current_period_start?: string;
+          current_period_end?: string;
+          cancel_at_period_end?: boolean;
+          canceled_at?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "subscriptions_workspace_id_fkey";
+            columns: ["workspace_id"];
+            isOneToOne: false;
+            referencedRelation: "workspaces";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "subscriptions_plan_id_fkey";
+            columns: ["plan_id"];
+            isOneToOne: false;
+            referencedRelation: "plans";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      subscription_invoices: {
+        Row: {
+          id: string;
+          subscription_id: string;
+          workspace_id: string;
+          provider_invoice_id: string | null;
+          provider_payment_id: string | null;
+          status: string;
+          amount: number;
+          currency: string;
+          due_at: string | null;
+          paid_at: string | null;
+          failure_reason: string | null;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          subscription_id: string;
+          workspace_id: string;
+          provider_invoice_id?: string | null;
+          provider_payment_id?: string | null;
+          status?: string;
+          amount?: number;
+          currency?: string;
+          due_at?: string | null;
+          paid_at?: string | null;
+          failure_reason?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          subscription_id?: string;
+          workspace_id?: string;
+          provider_invoice_id?: string | null;
+          provider_payment_id?: string | null;
+          status?: string;
+          amount?: number;
+          currency?: string;
+          due_at?: string | null;
+          paid_at?: string | null;
+          failure_reason?: string | null;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "subscription_invoices_subscription_id_fkey";
+            columns: ["subscription_id"];
+            isOneToOne: false;
+            referencedRelation: "subscriptions";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "subscription_invoices_workspace_id_fkey";
+            columns: ["workspace_id"];
+            isOneToOne: false;
+            referencedRelation: "workspaces";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      billing_webhook_events: {
+        Row: {
+          id: string;
+          provider: string;
+          external_event_id: string;
+          event_type: string;
+          payload: Json;
+          processed: boolean;
+          processed_at: string | null;
+          error: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          provider?: string;
+          external_event_id: string;
+          event_type: string;
+          payload?: Json;
+          processed?: boolean;
+          processed_at?: string | null;
+          error?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          provider?: string;
+          external_event_id?: string;
+          event_type?: string;
+          payload?: Json;
+          processed?: boolean;
+          processed_at?: string | null;
+          error?: string | null;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
     };
     Views: {
       [_ in never]: never;
@@ -1947,6 +2277,15 @@ export type Database = {
       brain_insight_severity: "info" | "warning" | "critical" | "success";
       automation_status: "active" | "paused" | "draft";
       automation_trigger_type: "metric_threshold" | "schedule" | "event" | "manual";
+      plan_interval: "monthly" | "annual";
+      subscription_status:
+        | "trialing"
+        | "active"
+        | "past_due"
+        | "grace_period"
+        | "paused"
+        | "canceled"
+        | "expired";
     };
     CompositeTypes: {
       [_ in never]: never;

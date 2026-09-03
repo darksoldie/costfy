@@ -81,19 +81,31 @@ export type StatusType = "active" | "paused" | "warning" | "error" | "neutral";
 
 export function statusDotClass(status: StatusType = "active") {
   const map: Record<StatusType, string> = {
-    active: "bg-success shadow-[0_0_6px_rgba(34,197,94,0.4)]",
+    active: "bg-success",
     paused: "bg-muted-foreground/60",
-    warning: "bg-warning shadow-[0_0_6px_rgba(234,179,8,0.4)]",
-    error: "bg-destructive shadow-[0_0_6px_rgba(239,68,68,0.4)]",
+    warning: "bg-warning",
+    error: "bg-destructive",
     neutral: "bg-subtle-foreground/50",
   };
-  return cn("inline-block size-1.5 rounded-full shrink-0", map[status]);
+  return cn("inline-block size-2 rounded-full shrink-0", map[status]);
 }
+
+export const selectClass = cn(
+  "h-10 w-full rounded-md border border-input bg-background px-3 text-[14px] text-foreground",
+  "transition-colors hover:border-border-strong focus:border-primary focus:outline-none",
+  "focus-visible:outline-none focus:ring-4 focus:ring-primary/12 disabled:opacity-55",
+);
 
 export const tableHeaderCellClass =
   "px-3 py-2.5 text-left text-[11px] font-semibold text-muted-foreground tracking-wider uppercase select-none";
 
+export const tableHeaderNumericClass =
+  "px-3 py-2.5 text-right text-[11px] font-semibold text-muted-foreground tracking-wider uppercase select-none";
+
 export const tableCellClass =
   "px-3 py-3 text-[13px] text-foreground border-t border-border/60 align-middle";
+
+export const tableCellNumericClass =
+  "px-3 py-3 text-[13px] text-foreground border-t border-border/60 align-middle text-right type-numeric tabular-nums";
 
 export const tableRowClass = "transition-colors hover:bg-secondary/40 group";

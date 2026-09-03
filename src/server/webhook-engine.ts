@@ -189,6 +189,8 @@ export class WebhookEngine {
         });
       }
 
+      await WebhookEngine.syncIntegrationRecord(workspaceId, provider);
+
       return { success: true, orderId: existingOrder.id, isNew: false };
     }
 
@@ -332,7 +334,50 @@ export class WebhookEngine {
       },
     });
 
+    // 7. Atualizar status da integração
+    await WebhookEngine.syncIntegrationRecord(workspaceId, provider);
+
     return { success: true, orderId: newOrder.id, isNew: true };
+  }
+
+  private static async syncIntegrationRecord(
+    workspaceId: string,
+    provider: WebhookProvider,
+  ): Promise<void> {
+    try {
+      const { data: existingIntegration } = await supabaseAdmin
+        .from("integrations")
+        .select("id, record_count")
+        .eq("workspace_id", workspaceId)
+        .eq("provider", provider)
+        .maybeSingle();
+
+      if (existingIntegration) {
+        await supabaseAdmin
+          .from("integrations")
+          .update({
+            status: "connected",
+            last_synced_at: new Date().toISOString(),
+            record_count: Number(existingIntegration.record_count || 0) + 1,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", existingIntegration.id);
+      } else {
+        const category = provider === "stripe" ? "Pagamentos" : "Infoprodutos";
+        const displayName = provider.charAt(0).toUpperCase() + provider.slice(1);
+        await supabaseAdmin.from("integrations").insert({
+          workspace_id: workspaceId,
+          provider,
+          category,
+          display_name: displayName,
+          status: "connected",
+          last_synced_at: new Date().toISOString(),
+          record_count: 1,
+        });
+      }
+    } catch (err: unknown) {
+      console.warn("[Webhook] Não foi possível atualizar tabela de integrações:", err);
+    }
   }
 
   // =====================================================================

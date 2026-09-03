@@ -54,9 +54,24 @@ export default {
         return await handleTrackingRequest(request);
       }
 
+      if (url.pathname.startsWith("/api/billing/")) {
+        const { handleBillingRequest } = await import("./server/billing-handler");
+        return await handleBillingRequest(request);
+      }
+
+      if (url.pathname === "/api/webhooks/mercadopago-billing") {
+        const { handleBillingWebhookRequest } = await import("./server/billing-webhook-handler");
+        return await handleBillingWebhookRequest(request);
+      }
+
       if (url.pathname.startsWith("/api/webhooks/")) {
         const { handleWebhookRequest } = await import("./server/webhook-handler");
         return await handleWebhookRequest(request);
+      }
+
+      if (url.pathname.startsWith("/api/cron/")) {
+        const { handleCronRequest } = await import("./server/cron-handler");
+        return await handleCronRequest(request);
       }
 
       const handler = await getServerEntry();

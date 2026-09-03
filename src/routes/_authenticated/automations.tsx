@@ -107,22 +107,73 @@ function AutomationsPage() {
     },
   });
 
+  const [evaluating, setEvaluating] = useState(false);
+  const [evalResult, setEvalResult] = useState<string | null>(null);
+
+  async function handleRunEvaluations() {
+    setEvaluating(true);
+    setEvalResult(null);
+    try {
+      const res = await fetch("/api/cron/evaluate", { method: "POST" });
+      const data = (await res.json()) as {
+        success?: boolean;
+        evaluatedCount?: number;
+        triggeredCount?: number;
+        message?: string;
+      };
+      if (data.success) {
+        setEvalResult(
+          data.message ||
+            `Avaliação concluída: ${data.evaluatedCount || 0} regra(s) testada(s), ${data.triggeredCount || 0} disparo(s).`,
+        );
+        void queryClient.invalidateQueries({ queryKey: ["automations", workspaceId] });
+      } else {
+        setEvalResult("Falha ao avaliar regras.");
+      }
+    } catch {
+      setEvalResult("Erro de conexão ao executar avaliação.");
+    } finally {
+      setEvaluating(false);
+      setTimeout(() => setEvalResult(null), 5000);
+    }
+  }
+
   return (
     <AppShell
       title="Automações"
       description="Regras operacionais com proteção: Trigger → Condition → Action, sempre respeitando guardrails."
       actions={
-        <button
-          type="button"
-          onClick={() => setModalOpen(true)}
-          className={buttonClass("primary", "sm", "gap-1.5")}
-        >
-          <Plus className="size-3.5" />
-          Nova automação
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={handleRunEvaluations}
+            disabled={evaluating}
+            className={buttonClass("outline", "sm", "gap-1.5")}
+          >
+            <Play className="size-3.5" />
+            {evaluating ? "Avaliando…" : "Testar regras"}
+          </button>
+          <button
+            type="button"
+            onClick={() => setModalOpen(true)}
+            className={buttonClass("primary", "sm", "gap-1.5")}
+          >
+            <Plus className="size-3.5" />
+            Nova automação
+          </button>
+        </div>
       }
     >
       <div className="space-y-6">
+        {evalResult && (
+          <div
+            role="status"
+            className="flex items-center gap-2 rounded-lg border border-primary/30 bg-primary/10 px-4 py-3 text-[13px] font-medium text-foreground"
+          >
+            <CheckCircle2 className="size-4 text-primary shrink-0" />
+            {evalResult}
+          </div>
+        )}
         {/* Banner de Guardrails */}
         <div className="rounded-xl border border-primary/30 bg-primary/[0.04] p-4 flex items-center justify-between">
           <div className="flex items-center gap-3">

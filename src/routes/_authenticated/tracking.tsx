@@ -10,7 +10,6 @@ import {
   ExternalLink,
   Layers,
   Code2,
-  Sparkles,
 } from "lucide-react";
 
 import { AppShell } from "@/components/app/app-shell";
@@ -471,23 +470,47 @@ function TrackingPage() {
         {/* Script de Rastreamento */}
         {tab === "script" && (
           <div className="editorial-card p-6 space-y-4">
-            <h3 className="text-[15px] font-semibold text-foreground">
-              Script de Rastreamento Costfy
-            </h3>
-            <p className="text-[12.5px] text-muted-foreground">
-              Adicione esta tag no cabeçalho (<code className="text-foreground">&lt;head&gt;</code>)
-              do seu site, loja ou checkout para capturar sessões, UTMs e eventos de conversão em
-              tempo real.
-            </p>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div>
+                <h3 className="text-[15px] font-semibold text-foreground">
+                  Script de Rastreamento Costfy
+                </h3>
+                <p className="text-[12.5px] text-muted-foreground mt-0.5">
+                  Adicione esta tag no cabeçalho (<code className="text-foreground">&lt;head&gt;</code>)
+                  do seu site, loja ou checkout para capturar sessões, UTMs e eventos de conversão em
+                  tempo real.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  const origin = typeof window !== "undefined" ? window.location.origin : "https://costfy.com.br";
+                  const snippet = `<!-- Costfy Pixel Tracking Tag -->\n<script>\n  (function(w,d,s,u,wid){\n    w.CostfyTrackingObject=wid;\n    w.costfyWorkspaceId=wid;\n    var f=d.getElementsByTagName(s)[0],j=d.createElement(s);\n    j.async=true;j.src=u;j.setAttribute('data-workspace-id',wid);f.parentNode.insertBefore(j,f);\n  })(window,document,'script','${origin}/track.js','${workspaceId || "YOUR_WORKSPACE_ID"}');\n</script>`;
+                  copyToClipboard(snippet, "script_pixel");
+                }}
+                className={buttonClass("primary", "sm", "gap-1.5 shrink-0")}
+              >
+                {copiedId === "script_pixel" ? (
+                  <>
+                    <Check className="size-3.5 text-success" /> Copiado!
+                  </>
+                ) : (
+                  <>
+                    <Copy className="size-3.5" /> Copiar script
+                  </>
+                )}
+              </button>
+            </div>
 
             <pre className="rounded-md border border-border bg-surface/60 p-4 font-mono text-[12px] text-foreground overflow-x-auto">
               {`<!-- Costfy Pixel Tracking Tag -->
 <script>
   (function(w,d,s,u,wid){
     w.CostfyTrackingObject=wid;
+    w.costfyWorkspaceId=wid;
     var f=d.getElementsByTagName(s)[0],j=d.createElement(s);
-    j.async=true;j.src=u;f.parentNode.insertBefore(j,f);
-  })(window,document,'script','https://costfy.com.br/track.js','${workspaceId || "YOUR_WORKSPACE_ID"}');
+    j.async=true;j.src=u;j.setAttribute('data-workspace-id',wid);f.parentNode.insertBefore(j,f);
+  })(window,document,'script','${typeof window !== "undefined" ? window.location.origin : "https://costfy.com.br"}/track.js','${workspaceId || "YOUR_WORKSPACE_ID"}');
 </script>`}
             </pre>
           </div>

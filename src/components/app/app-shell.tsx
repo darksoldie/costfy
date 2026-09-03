@@ -2,9 +2,11 @@ import { useQueryClient } from "@tanstack/react-query";
 import { Link, useLocation, useNavigate } from "@tanstack/react-router";
 import {
   Activity,
+  AlertTriangle,
   BarChart3,
   Boxes,
   Command,
+  CreditCard,
   FileSpreadsheet,
   FileText,
   History,
@@ -15,7 +17,7 @@ import {
   Plug,
   Search,
   Settings,
-  Sparkles,
+  Cpu,
   Sun,
   Users,
   Workflow,
@@ -54,7 +56,7 @@ const NAV_SECTIONS = [
   {
     title: "Inteligência",
     items: [
-      { to: "/brain", label: "Brain Hub", icon: Sparkles },
+      { to: "/brain", label: "Brain Hub", icon: Cpu },
       { to: "/automations", label: "Automações", icon: Zap },
       { to: "/reports", label: "Relatórios", icon: FileText },
     ],
@@ -64,6 +66,7 @@ const NAV_SECTIONS = [
     items: [
       { to: "/integrations", label: "Integrações", icon: Plug },
       { to: "/team", label: "Time & Papéis", icon: Users },
+      { to: "/billing", label: "Faturamento", icon: CreditCard },
       { to: "/audit", label: "Auditoria", icon: History },
       { to: "/settings", label: "Configurações", icon: Settings },
     ],
@@ -137,20 +140,20 @@ export function AppShell({ title, description, actions, children }: AppShellProp
         <WorkspaceSwitcher />
       </div>
 
-      <nav className="flex-1 space-y-4 overflow-y-auto px-2.5 py-1" aria-label="Navegação do app">
+      <nav className="flex-1 space-y-4 overflow-y-auto px-3 py-2" aria-label="Navegação do app">
         {NAV_SECTIONS.map((section) => (
-          <div key={section.title} className="space-y-0.5">
-            <p className="px-2 text-[10px] font-semibold tracking-[0.08em] text-muted-foreground/70 uppercase">
+          <div key={section.title} className="space-y-1">
+            <p className="px-2.5 text-[10.5px] font-semibold tracking-wider text-muted-foreground/70 uppercase">
               {section.title}
             </p>
             {section.items.map(({ to, label, icon: Icon }) => (
               <Link
                 key={to}
                 to={to}
-                className="group relative flex items-center gap-2.5 rounded-md px-2.5 py-1.5 text-[13px] font-medium text-muted-foreground transition-all hover:bg-secondary/70 hover:text-foreground"
+                className="group flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-[13px] font-medium text-muted-foreground transition-all hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                 activeProps={{
                   className:
-                    "bg-secondary/90 text-foreground font-semibold before:absolute before:left-0 before:top-1.5 before:bottom-1.5 before:w-1 before:rounded-r before:bg-primary",
+                    "bg-primary text-primary-foreground font-semibold shadow-xs",
                 }}
               >
                 <Icon
@@ -294,13 +297,79 @@ export function AppShell({ title, description, actions, children }: AppShellProp
                 "border-accent/30 text-accent hover:bg-accent/10 gap-1.5 h-8 px-2.5",
               )}
             >
-              <Sparkles className="size-3.5 shrink-0" />
+              <CostfyMark size={14} className="text-accent shrink-0" />
               <span className="hidden sm:inline text-[12.5px]">Brain</span>
+              <kbd className="hidden lg:inline-block rounded border border-accent/20 bg-background px-1 py-0.2 font-mono text-[9px] text-accent">
+                ⌘B
+              </kbd>
             </button>
           </div>
         </header>
 
-        <main className="flex-1 px-4 py-5 sm:px-6 sm:py-6">{children}</main>
+        <main className="flex-1 px-4 py-5 pb-20 sm:px-6 sm:py-6 md:pb-6">
+          {active?.workspace.status === "read_only" && (
+            <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-xl border border-destructive/30 bg-destructive/10 p-4 text-[13px] text-destructive">
+              <div className="flex items-center gap-2.5">
+                <AlertTriangle className="size-4 shrink-0" />
+                <span>
+                  <strong>Período de testes finalizado:</strong> Seu workspace está em modo somente leitura. A criação de campanhas, automações e ações está bloqueada.
+                </span>
+              </div>
+              <Link to="/billing" className={buttonClass("primary", "sm", "h-7 text-[12px] gap-1 shrink-0")}>
+                <CreditCard className="size-3.5" />
+                <span>Reativar no Mercado Pago</span>
+              </Link>
+            </div>
+          )}
+          {children}
+        </main>
+
+        {/* Mobile Bottom Navigation Bar (iOS / Android Native OS Feel) */}
+        <nav
+          aria-label="Navegação rápida mobile"
+          className="fixed bottom-0 left-0 right-0 z-40 flex h-14 items-center justify-around border-t border-border bg-background/90 px-2 backdrop-blur-lg md:hidden"
+        >
+          <Link
+            to="/dashboard"
+            className="flex flex-col items-center justify-center gap-0.5 text-muted-foreground transition-colors hover:text-foreground"
+            activeProps={{ className: "text-primary font-semibold" }}
+          >
+            <BarChart3 className="size-4" />
+            <span className="text-[10px]">Cockpit</span>
+          </Link>
+          <Link
+            to="/finance"
+            className="flex flex-col items-center justify-center gap-0.5 text-muted-foreground transition-colors hover:text-foreground"
+            activeProps={{ className: "text-primary font-semibold" }}
+          >
+            <FileSpreadsheet className="size-4" />
+            <span className="text-[10px]">Financeiro</span>
+          </Link>
+          <Link
+            to="/sales"
+            className="flex flex-col items-center justify-center gap-0.5 text-muted-foreground transition-colors hover:text-foreground"
+            activeProps={{ className: "text-primary font-semibold" }}
+          >
+            <Boxes className="size-4" />
+            <span className="text-[10px]">Vendas</span>
+          </Link>
+          <Link
+            to="/marketing"
+            className="flex flex-col items-center justify-center gap-0.5 text-muted-foreground transition-colors hover:text-foreground"
+            activeProps={{ className: "text-primary font-semibold" }}
+          >
+            <LineChart className="size-4" />
+            <span className="text-[10px]">Mídia</span>
+          </Link>
+          <button
+            type="button"
+            onClick={() => setMobileNavOpen(true)}
+            className="flex flex-col items-center justify-center gap-0.5 text-muted-foreground transition-colors hover:text-foreground"
+          >
+            <Menu className="size-4" />
+            <span className="text-[10px]">Menu</span>
+          </button>
+        </nav>
       </div>
 
       <CommandBar open={commandOpen} onOpenChange={setCommandOpen} />

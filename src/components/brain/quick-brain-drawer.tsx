@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useLocation } from "@tanstack/react-router";
 import {
-  Sparkles,
   X,
   Send,
   ShieldCheck,

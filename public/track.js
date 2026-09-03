@@ -16,7 +16,10 @@
     document.querySelector('script[src*="track.js"]');
 
   var workspaceId =
-    (scriptTag && scriptTag.getAttribute("data-workspace-id")) || window.costfyWorkspaceId || null;
+    (scriptTag && scriptTag.getAttribute("data-workspace-id")) ||
+    window.costfyWorkspaceId ||
+    window.CostfyTrackingObject ||
+    null;
 
   var scriptSrc = scriptTag ? scriptTag.src : "";
   var apiOrigin = "";

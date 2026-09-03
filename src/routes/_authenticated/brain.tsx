@@ -2,7 +2,6 @@ import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import {
-  Sparkles,
   Send,
   AlertTriangle,
   TrendingUp,
@@ -296,7 +295,7 @@ function BrainPage() {
           <div className="editorial-card p-5 space-y-3.5">
             <div className="flex items-center justify-between">
               <h4 className="text-[14px] font-semibold text-foreground flex items-center gap-2">
-                <Sparkles className="size-4 text-accent" />
+                <CostfyMark size={16} className="text-accent shrink-0" />
                 Insights e Diagnósticos
               </h4>
               <span className="text-[11px] text-muted-foreground font-mono">

@@ -57,16 +57,21 @@ export function HeroProduct() {
 
   return (
     <div className="surface-panel overflow-hidden shadow-[var(--shadow-overlay)]">
-      {/* Barra de janela */}
+      {/* Barra de janela macOS */}
       <div className="flex items-center gap-3 border-b border-border bg-elevated px-4 py-2.5">
-        <div className="flex items-center gap-2">
-          <CostfyMark size={16} className="text-primary" />
-          <span className="text-[12px] font-medium text-foreground">Overview</span>
+        <div className="flex items-center gap-1.5 mr-1" aria-hidden>
+          <span className="size-2.5 rounded-full bg-rose-500/70 border border-rose-600/30" />
+          <span className="size-2.5 rounded-full bg-amber-500/70 border border-amber-600/30" />
+          <span className="size-2.5 rounded-full bg-emerald-500/70 border border-emerald-600/30" />
         </div>
-        <span className="rounded-sm bg-secondary px-1.5 py-0.5 text-[10px] font-medium text-muted-foreground">
-          Demonstração
+        <div className="flex items-center gap-2">
+          <CostfyMark size={16} className="text-primary shrink-0" />
+          <span className="text-[12px] font-semibold text-foreground">Costfy OS — Executive Cockpit</span>
+        </div>
+        <span className="rounded bg-primary-soft text-primary border border-primary/20 px-1.5 py-0.5 text-[10px] font-medium">
+          Ao Vivo
         </span>
-        <span className="ml-auto text-[11px] text-subtle-foreground">Últimos 30 dias</span>
+        <span className="ml-auto text-[11px] text-muted-foreground font-mono hidden sm:inline">⌘K Control Center</span>
       </div>
 
       <div className="grid gap-px bg-border md:grid-cols-[1.35fr_1fr]">

@@ -10,7 +10,6 @@ import {
   Play,
   Plus,
   Search,
-  Sparkles,
   TrendingUp,
 } from "lucide-react";
 

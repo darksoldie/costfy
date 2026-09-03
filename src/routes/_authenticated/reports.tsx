@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { FileText, Download, Printer, Calendar, Layers, Sparkles, TrendingUp } from "lucide-react";
+import { FileText, Download, Printer, Calendar, Layers, TrendingUp } from "lucide-react";
 
 import { AppShell } from "@/components/app/app-shell";
 import { WorkspaceProvider, useWorkspace } from "@/components/app/workspace-context";

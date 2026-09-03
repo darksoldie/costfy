@@ -6,7 +6,7 @@ import {
   Gauge,
   LineChart,
   ShieldCheck,
-  Sparkles,
+  Cpu,
   Workflow,
 } from "lucide-react";
 
@@ -67,7 +67,7 @@ const MODULES = [
     text: "UTMs padronizadas, eventos e atribuição para saber de onde a venda realmente veio.",
   },
   {
-    icon: Sparkles,
+    icon: Cpu,
     name: "Brain",
     text: "Leitura contínua do contexto, com insights priorizados e recomendações explicadas.",
   },
