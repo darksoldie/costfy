@@ -1,9 +1,20 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { AppShell } from "@/components/app/app-shell";
-import { WorkspaceProvider } from "@/components/app/workspace-context";
 import { BillingManager } from "@/components/billing/billing-manager";
 
+export interface BillingSearchParams {
+  plan?: string | undefined;
+  interval?: "monthly" | "annual" | undefined;
+}
+
 export const Route = createFileRoute("/_authenticated/billing")({
+  validateSearch: (search: Record<string, unknown>): BillingSearchParams => {
+    const rawPlan = search["plan"];
+    const rawInterval = search["interval"];
+    return {
+      plan: typeof rawPlan === "string" ? rawPlan : undefined,
+      interval: rawInterval === "annual" || rawInterval === "monthly" ? rawInterval : undefined,
+    };
+  },
   head: () => ({
     meta: [
       { title: "Faturamento & Assinatura — Costfy" },
@@ -13,14 +24,5 @@ export const Route = createFileRoute("/_authenticated/billing")({
       },
     ],
   }),
-  component: () => (
-    <WorkspaceProvider>
-      <AppShell
-        title="Faturamento & Assinatura"
-        description="Controle seu plano oficial, faturas emitidas e limites de processamento do workspace."
-      >
-        <BillingManager />
-      </AppShell>
-    </WorkspaceProvider>
-  ),
+  component: BillingManager,
 });

@@ -35,9 +35,10 @@ const OFFICIAL_PLANS = [
     name: "Starter",
     intent: "Para quem está organizando a operação e consolidando métricas",
     monthlyPrice: "R$ 59,90",
-    annualPrice: "R$ 599,00",
+    annualPrice: "R$ 575,00",
     monthlyPriceCents: 5990,
-    annualPriceCents: 59900,
+    annualPriceCents: 57500,
+    annualMonthlyEquivalent: "R$ 47,91/mês",
     limits: [
       "1 workspace",
       "1 membro do time",
@@ -60,9 +61,10 @@ const OFFICIAL_PLANS = [
     name: "Growth",
     intent: "Para operações que escalam tráfego pago e exigem DRE real",
     monthlyPrice: "R$ 149,90",
-    annualPrice: "R$ 1.499,00",
+    annualPrice: "R$ 1.439,00",
     monthlyPriceCents: 14990,
-    annualPriceCents: 149900,
+    annualPriceCents: 143900,
+    annualMonthlyEquivalent: "R$ 119,91/mês",
     limits: [
       "1 workspace",
       "Até 3 membros do time",
@@ -89,9 +91,10 @@ const OFFICIAL_PLANS = [
     name: "Scale",
     intent: "Para múltiplos negócios, agências e times em rápida expansão",
     monthlyPrice: "R$ 299,90",
-    annualPrice: "R$ 2.999,00",
+    annualPrice: "R$ 2.879,00",
     monthlyPriceCents: 29990,
-    annualPriceCents: 299900,
+    annualPriceCents: 287900,
+    annualMonthlyEquivalent: "R$ 239,91/mês",
     limits: [
       "Até 3 workspaces inclusos",
       "Até 10 membros com RBAC granular",
@@ -121,19 +124,22 @@ const OFFICIAL_PLANS = [
     annualPriceCents: 0,
     limits: [
       "Workspaces ilimitados",
-      "Usuários ilimitados",
+      "Membros ilimitados",
       "Contas de anúncio ilimitadas",
-      "Infraestrutura dedicada",
+      "Integrações dedicadas",
+      "Campanhas ilimitadas",
+      "Automações customizadas",
     ],
     features: [
-      "SLA de 99.9% garantido em contrato",
-      "Single Sign-On (SSO / SAML)",
-      "Modelos de IA calibrados sob medida",
-      "Gerente de conta e onboarding assistido",
-      "Customizações de relatórios e exportações",
+      "Tudo do plano Scale",
+      "Infraestrutura e banco isolado dedicado",
+      "SLA de 99,9% com suporte 24/7",
+      "Gerente de conta e CS exclusivo",
+      "Modelos de inteligência sob demanda",
+      "Contrato empresarial e faturamento via boleto",
     ],
     highlight: false,
-    cta: "Falar com vendas",
+    cta: "Falar com especialista",
   },
 ];
 
@@ -143,9 +149,9 @@ function PricingPage() {
   return (
     <MarketingPage>
       <PageIntro
-        eyebrow="Preços e Planos Oficiais"
-        title="O Sistema Operacional ideal para o estágio do seu negócio"
-        description="Comece com 14 dias de teste completo, sem necessidade de cartão de crédito. Cobrança recorrente oficial via Mercado Pago em moeda nacional (BRL)."
+        eyebrow="Planos e Preços"
+        title="Comece seu teste de 14 dias sem cartão de crédito"
+        description="Acesso completo ao ecossistema Costfy para estruturar métricas, DRE e inteligência operacional. Cancele a qualquer momento sem burocracia."
       />
 
       <Section>
@@ -175,14 +181,14 @@ function PricingPage() {
               )}
             >
               <span>Faturamento Anual</span>
-              <span className="rounded-full bg-success/20 px-2 py-0.5 text-[11px] font-bold text-success">
-                Economize até 16%
+              <span className="rounded-full bg-success/20 px-2.5 py-0.5 text-[11px] font-bold text-success">
+                20% de economia
               </span>
             </button>
           </div>
           <p className="text-[12px] text-muted-foreground">
             {interval === "annual"
-              ? "Pagamento único anual com desconto. Acesso garantido por 12 meses."
+              ? "Pagamento antecipado anual com 20% de economia real sobre 12 meses."
               : "Sem fidelidade. Cancele quando quiser com 1 clique."}
           </p>
         </div>
@@ -261,14 +267,16 @@ function PricingPage() {
               <div className="mt-8 pt-4 border-t border-border">
                 {plan.slug === "enterprise" ? (
                   <Link
-                    to="/signup"
+                    to="/billing"
+                    search={{ plan: "enterprise", interval }}
                     className={buttonClass("outline", "md", "w-full text-center")}
                   >
                     Falar com especialista
                   </Link>
                 ) : (
                   <Link
-                    to="/signup"
+                    to="/billing"
+                    search={{ plan: plan.slug, interval }}
                     className={buttonClass(plan.highlight ? "primary" : "outline", "md", "w-full text-center gap-1.5")}
                   >
                     <span>{plan.cta}</span>

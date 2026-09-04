@@ -1,6 +1,7 @@
 import { useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { Search } from "lucide-react";
+import { motion, AnimatePresence } from "motion/react";
 
 import { cn } from "@/lib/utils";
 
@@ -178,8 +179,6 @@ export function CommandBar({
     }
   }, [open]);
 
-  if (!open) return null;
-
   function choose(item: CommandItem | undefined) {
     if (!item) return;
     onOpenChange(false);
@@ -187,17 +186,27 @@ export function CommandBar({
   }
 
   return (
-    <div
-      className="fixed inset-0 z-[100] flex items-start justify-center bg-background/70 px-4 pt-[12vh] backdrop-blur-sm animate-fade"
-      onClick={() => onOpenChange(false)}
-      role="presentation"
-    >
-      <div
-        role="dialog"
-        aria-label="Costfy Control Center"
-        className="w-full max-w-lg overflow-hidden rounded-xl border border-border bg-card shadow-[var(--shadow-overlay)] animate-rise"
-        onClick={(event) => event.stopPropagation()}
-      >
+    <AnimatePresence>
+      {open && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.15, ease: [0.22, 1, 0.36, 1] }}
+          className="fixed inset-0 z-[100] flex items-start justify-center bg-background/70 px-4 pt-[12vh] backdrop-blur-xs"
+          onClick={() => onOpenChange(false)}
+          role="presentation"
+        >
+          <motion.div
+            initial={{ opacity: 0, scale: 0.98, y: -8 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.98, y: -4 }}
+            transition={{ duration: 0.2, ease: [0.22, 1, 0.36, 1] }}
+            role="dialog"
+            aria-label="Costfy Control Center"
+            className="w-full max-w-lg overflow-hidden rounded-xl border border-border bg-card shadow-[var(--shadow-overlay)]"
+            onClick={(event) => event.stopPropagation()}
+          >
         <div className="flex items-center border-b border-border px-3.5 bg-surface/50">
           <Search className="size-4 text-muted-foreground shrink-0 mr-2.5" aria-hidden />
           <input
@@ -257,14 +266,16 @@ export function CommandBar({
           ))}
         </ul>
 
-        <div className="flex items-center justify-between border-t border-border px-3.5 py-2 bg-surface/50 text-[11px] text-muted-foreground">
-          <span>Costfy Operating System</span>
-          <div className="flex items-center gap-2">
-            <span>Navegar: <kbd className="font-mono text-[10px]">↑↓</kbd></span>
-            <span>Executar: <kbd className="font-mono text-[10px]">↵</kbd></span>
+          <div className="flex items-center justify-between border-t border-border px-3.5 py-2 bg-surface/50 text-[11px] text-muted-foreground">
+            <span>Costfy Operating System</span>
+            <div className="flex items-center gap-2">
+              <span>Navegar: <kbd className="font-mono text-[10px]">↑↓</kbd></span>
+              <span>Executar: <kbd className="font-mono text-[10px]">↵</kbd></span>
+            </div>
           </div>
-        </div>
-      </div>
-    </div>
-  );
+        </motion.div>
+      </motion.div>
+    )}
+  </AnimatePresence>
+);
 }

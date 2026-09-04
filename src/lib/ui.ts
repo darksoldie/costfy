@@ -31,8 +31,8 @@ export function buttonClass(
   className?: string,
 ) {
   return cn(
-    "inline-flex select-none items-center justify-center font-medium transition-colors",
-    "disabled:pointer-events-none disabled:opacity-55",
+    "inline-flex select-none items-center justify-center font-medium transition-all duration-150 active:scale-[0.985]",
+    "disabled:pointer-events-none disabled:opacity-55 disabled:active:scale-100",
     VARIANT[variant],
     SIZE[size],
     className,
@@ -41,7 +41,7 @@ export function buttonClass(
 
 export const inputClass = cn(
   "h-10 w-full rounded-md border border-input bg-background px-3 text-[14px] text-foreground",
-  "placeholder:text-subtle-foreground transition-colors",
+  "placeholder:text-subtle-foreground transition-all duration-150",
   "hover:border-border-strong focus:border-primary focus:outline-none",
   "focus-visible:outline-none focus:ring-4 focus:ring-primary/12",
   "disabled:opacity-55",

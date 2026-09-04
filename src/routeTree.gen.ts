@@ -34,6 +34,7 @@ import { Route as AuthenticatedSalesRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedSettingsRouteImport } from './routes/_authenticated/settings'
 import { Route as AuthenticatedTeamRouteImport } from './routes/_authenticated/team'
 import { Route as AuthenticatedTrackingRouteImport } from './routes/_authenticated/tracking'
+import { Route as InviteTokenRouteImport } from './routes/invite.$token'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -161,6 +162,11 @@ const AuthenticatedTrackingRoute = AuthenticatedTrackingRouteImport.update({
   path: '/tracking',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const InviteTokenRoute = InviteTokenRouteImport.update({
+  id: '/invite/$token',
+  path: '/invite/$token',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -187,6 +193,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof AuthenticatedSettingsRoute
   '/team': typeof AuthenticatedTeamRoute
   '/tracking': typeof AuthenticatedTrackingRoute
+  '/invite/$token': typeof InviteTokenRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -213,6 +220,7 @@ export interface FileRoutesByTo {
   '/settings': typeof AuthenticatedSettingsRoute
   '/team': typeof AuthenticatedTeamRoute
   '/tracking': typeof AuthenticatedTrackingRoute
+  '/invite/$token': typeof InviteTokenRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -241,6 +249,7 @@ export interface FileRoutesById {
   '/_authenticated/settings': typeof AuthenticatedSettingsRoute
   '/_authenticated/team': typeof AuthenticatedTeamRoute
   '/_authenticated/tracking': typeof AuthenticatedTrackingRoute
+  '/invite/$token': typeof InviteTokenRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -269,6 +278,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/team'
     | '/tracking'
+    | '/invite/$token'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -295,6 +305,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/team'
     | '/tracking'
+    | '/invite/$token'
   id:
     | '__root__'
     | '/'
@@ -322,6 +333,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings'
     | '/_authenticated/team'
     | '/_authenticated/tracking'
+    | '/invite/$token'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -335,6 +347,7 @@ export interface RootRouteChildren {
   ResourcesRoute: typeof ResourcesRoute
   SignupRoute: typeof SignupRoute
   SolutionsRoute: typeof SolutionsRoute
+  InviteTokenRoute: typeof InviteTokenRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -514,6 +527,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedTrackingRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/invite/$token': {
+      id: '/invite/$token'
+      path: '/invite/$token'
+      fullPath: '/invite/$token'
+      preLoaderRoute: typeof InviteTokenRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -567,6 +587,7 @@ const rootRouteChildren: RootRouteChildren = {
   ResourcesRoute: ResourcesRoute,
   SignupRoute: SignupRoute,
   SolutionsRoute: SolutionsRoute,
+  InviteTokenRoute: InviteTokenRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

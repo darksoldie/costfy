@@ -69,6 +69,16 @@ export default {
         return await handleWebhookRequest(request);
       }
 
+      if (url.pathname.startsWith("/api/integrations/")) {
+        const { handleIntegrationsRequest } = await import("./server/integrations-handler");
+        return await handleIntegrationsRequest(request);
+      }
+
+      if (url.pathname.startsWith("/api/invitations/")) {
+        const { handleInvitationsRequest } = await import("./server/invitations-handler");
+        return await handleInvitationsRequest(request);
+      }
+
       if (url.pathname.startsWith("/api/cron/")) {
         const { handleCronRequest } = await import("./server/cron-handler");
         return await handleCronRequest(request);

@@ -25,6 +25,7 @@ import {
   Zap,
 } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
+import { createPortal } from "react-dom";
 
 import { CommandBar } from "@/components/app/command-bar";
 import { useWorkspace } from "@/components/app/workspace-context";
@@ -73,11 +74,86 @@ const NAV_SECTIONS = [
   },
 ] as const;
 
+const ROUTE_CONFIG: Record<string, { title: string; description?: string }> = {
+  "/dashboard": {
+    title: "Cockpit Executivo",
+    description: "Visão executiva em tempo real: faturamento, investimento em mídia, margem líquida e lucro real.",
+  },
+  "/analytics": {
+    title: "Analytics Multidimensional",
+    description: "Investigação analítica: cruzamentos por canal, campanhas e produtos.",
+  },
+  "/marketing": {
+    title: "Marketing & Mídia",
+    description: "Controle campanhas ativas, orçamentos e performance consolidados.",
+  },
+  "/sales": {
+    title: "Vendas & Catálogo",
+    description: "Acompanhe pedidos consolidados, clientes ativos e catálogo de produtos.",
+  },
+  "/finance": {
+    title: "Financeiro & DRE",
+    description: "DRE gerencial em cascata: receitas, CMV, taxas, impostos, tráfego e custos fixos.",
+  },
+  "/tracking": {
+    title: "Tracking & Gerador de UTMs",
+    description: "Gere links parametrizados, monitore cliques e sessões de tráfego.",
+  },
+  "/brain": {
+    title: "Costfy Brain Hub",
+    description: "Inteligência operacional: diagnósticos, anomalias e ações com aprovação humana.",
+  },
+  "/automations": {
+    title: "Automações & Regras",
+    description: "Regras de proteção da operação: gatilho, condição e ação com guardrails de segurança.",
+  },
+  "/reports": {
+    title: "Relatórios",
+    description: "Documentos consolidados para diretoria, investidores e planejamento estratégico.",
+  },
+  "/integrations": {
+    title: "Integrações",
+    description: "Conecte suas fontes de vendas e tráfego. Dados recebidos via Webhooks são normalizados em tempo real.",
+  },
+  "/team": {
+    title: "Time e permissões",
+    description: "Quem participa deste workspace e o que cada papel pode fazer.",
+  },
+  "/billing": {
+    title: "Faturamento & Assinatura",
+    description: "Controle seu plano oficial, faturas emitidas e limites de processamento do workspace.",
+  },
+  "/audit": {
+    title: "Registro de Auditoria",
+    description: "Trilha imutável de todas as ações, acessos e alterações realizadas no workspace.",
+  },
+  "/settings": {
+    title: "Configurações do workspace",
+    description: "Identidade, moeda base e plano do workspace.",
+  },
+  "/onboarding": {
+    title: "Configuração do Workspace",
+    description: "Inicialize o ambiente operacional do seu negócio digital.",
+  },
+};
+
 export interface AppShellProps {
-  title: string;
+  title?: string;
   description?: string;
   actions?: ReactNode;
   children: ReactNode;
+}
+
+/** Componente de portal para renderizar ações contextuais na Topbar do AppShell */
+export function AppShellActions({ children }: { children: ReactNode }) {
+  const [target, setTarget] = useState<HTMLElement | null>(null);
+
+  useEffect(() => {
+    setTarget(document.getElementById("app-shell-actions"));
+  }, []);
+
+  if (!target) return null;
+  return createPortal(children, target);
 }
 
 /** Casca do app autenticado: sidebar global, topo contextual, Quick Brain e Command Bar. */
@@ -90,6 +166,10 @@ export function AppShell({ title, description, actions, children }: AppShellProp
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+
+  const routeMeta = ROUTE_CONFIG[location.pathname];
+  const resolvedTitle = title ?? routeMeta?.title ?? "Costfy";
+  const resolvedDescription = description ?? routeMeta?.description;
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
@@ -150,14 +230,14 @@ export function AppShell({ title, description, actions, children }: AppShellProp
               <Link
                 key={to}
                 to={to}
-                className="group flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-[13px] font-medium text-muted-foreground transition-all hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                className="group flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-[13px] font-medium text-muted-foreground transition-all hover:bg-secondary hover:text-foreground"
                 activeProps={{
                   className:
-                    "bg-primary text-primary-foreground font-semibold shadow-xs",
+                    "bg-secondary text-foreground font-semibold shadow-xs",
                 }}
               >
                 <Icon
-                  className="size-4 shrink-0 transition-transform group-hover:scale-105"
+                  className="size-4 shrink-0 transition-transform group-hover:scale-105 group-[.font-semibold]:text-primary"
                   aria-hidden
                 />
                 <span className="truncate">{label}</span>
@@ -172,9 +252,9 @@ export function AppShell({ title, description, actions, children }: AppShellProp
         <button
           type="button"
           onClick={() => setBrainOpen(true)}
-          className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-[13px] font-medium text-accent transition-colors hover:bg-accent/10"
+          className="flex w-full items-center gap-2.5 rounded-md px-2.5 py-2 text-[13px] font-medium text-foreground transition-colors hover:bg-secondary"
         >
-          <CostfyMark size={16} className="text-accent shrink-0" />
+          <CostfyMark size={16} className="text-primary shrink-0" />
           <span>Quick Brain</span>
           <kbd className="ml-auto rounded border border-border/80 bg-background px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">
             ⌘B
@@ -262,11 +342,11 @@ export function AppShell({ title, description, actions, children }: AppShellProp
                   {active?.workspace.name ?? "Costfy"}
                 </span>
                 <span>/</span>
-                <span className="truncate">{title}</span>
+                <span className="truncate">{resolvedTitle}</span>
               </div>
-              {description && (
+              {resolvedDescription && (
                 <p className="hidden text-[12px] text-muted-foreground sm:block truncate max-w-xl">
-                  {description}
+                  {resolvedDescription}
                 </p>
               )}
             </div>
@@ -288,6 +368,7 @@ export function AppShell({ title, description, actions, children }: AppShellProp
             </button>
 
             {actions}
+            <div id="app-shell-actions" className="flex items-center gap-2 empty:hidden" />
 
             <button
               type="button"

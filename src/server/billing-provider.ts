@@ -51,18 +51,11 @@ export class MercadoPagoProvider implements BillingProvider {
   async createCheckout(params: CreateCheckoutParams): Promise<CheckoutResult> {
     const accessToken = this.getAccessToken();
 
-    // Modo Sandbox / Teste local sem credenciais reais
+    // Validação estrita de credenciais: ZERO MOCKS, ZERO FAKE CHECKOUT
     if (!accessToken) {
-      console.warn(
-        "[MercadoPagoProvider] MERCADOPAGO_ACCESS_TOKEN não configurado. Utilizando modo Sandbox local.",
+      throw new Error(
+        "MERCADOPAGO_ACCESS_TOKEN não está configurado no servidor. Configure o token oficial nas variáveis de ambiente para gerar a assinatura real via Mercado Pago.",
       );
-      const fakeSubscriptionId = `mp_sub_sandbox_${params.workspaceId}_${Date.now()}`;
-      const sandboxCheckoutUrl = `${params.returnUrl}?session_id=${fakeSubscriptionId}&sandbox=true&status=approved&plan=${params.planSlug}`;
-      return {
-        checkoutUrl: sandboxCheckoutUrl,
-        providerSubscriptionId: fakeSubscriptionId,
-        isSandbox: true,
-      };
     }
 
     // Chamada oficial à API do Mercado Pago (Preapproval para Assinaturas Recorrentes)
@@ -128,13 +121,8 @@ export class MercadoPagoProvider implements BillingProvider {
   async getSubscription(subscriptionId: string): Promise<ProviderSubscription | null> {
     const accessToken = this.getAccessToken();
     if (!accessToken) {
-      // Mock para Sandbox
-      return {
-        id: subscriptionId,
-        status: "authorized",
-        payerEmail: "sandbox@costfy.com.br",
-        dateCreated: new Date().toISOString(),
-      };
+      console.warn("[MercadoPagoProvider] getSubscription chamado sem MERCADOPAGO_ACCESS_TOKEN.");
+      return null;
     }
 
     try {
@@ -178,7 +166,10 @@ export class MercadoPagoProvider implements BillingProvider {
    */
   async cancelSubscription(subscriptionId: string): Promise<boolean> {
     const accessToken = this.getAccessToken();
-    if (!accessToken) return true; // Em Sandbox, simula cancelamento imediato com sucesso
+    if (!accessToken) {
+      console.error("[MercadoPagoProvider] cancelSubscription chamado sem MERCADOPAGO_ACCESS_TOKEN.");
+      return false;
+    }
 
     try {
       const response = await fetch(

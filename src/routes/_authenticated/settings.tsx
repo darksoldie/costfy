@@ -13,8 +13,7 @@ import {
   ArrowUpRight,
 } from "lucide-react";
 
-import { AppShell } from "@/components/app/app-shell";
-import { WorkspaceProvider, useWorkspace } from "@/components/app/workspace-context";
+import { useWorkspace } from "@/components/app/workspace-context";
 import { supabase } from "@/integrations/supabase/client";
 import { buttonClass, inputClass } from "@/lib/ui";
 import { cn } from "@/lib/utils";
@@ -37,11 +36,7 @@ export const Route = createFileRoute("/_authenticated/settings")({
       },
     ],
   }),
-  component: () => (
-    <WorkspaceProvider>
-      <SettingsPage />
-    </WorkspaceProvider>
-  ),
+  component: SettingsPage,
 });
 
 const STATUS_LABEL: Record<string, string> = {
@@ -137,20 +132,18 @@ function SettingsPage() {
 
   if (!active) {
     return (
-      <AppShell title="Configurações" description="Dados do workspace ativo.">
-        <div className="editorial-card p-10 text-center bg-surface/40">
-          <Building2 className="mx-auto size-8 text-muted-foreground" />
-          <h3 className="type-h3 mt-3 text-foreground">Nenhum workspace ativo</h3>
-          <p className="type-body-sm mx-auto mt-1 max-w-sm text-muted-foreground">
-            Selecione ou crie um workspace para acessar as configurações.
-          </p>
-          <div className="mt-4">
-            <Link to="/onboarding" className={buttonClass("primary", "sm")}>
-              Criar workspace
-            </Link>
-          </div>
+      <div className="editorial-card p-10 text-center bg-surface/40">
+        <Building2 className="mx-auto size-8 text-muted-foreground" />
+        <h3 className="type-h3 mt-3 text-foreground">Nenhum workspace ativo</h3>
+        <p className="type-body-sm mx-auto mt-1 max-w-sm text-muted-foreground">
+          Selecione ou crie um workspace para acessar as configurações.
+        </p>
+        <div className="mt-4">
+          <Link to="/onboarding" className={buttonClass("primary", "sm")}>
+            Criar workspace
+          </Link>
         </div>
-      </AppShell>
+      </div>
     );
   }
 
@@ -161,11 +154,7 @@ function SettingsPage() {
   const [activeTab, setActiveTab] = useState<"general" | "billing">("general");
 
   return (
-    <AppShell
-      title="Configurações"
-      description="Gerencie as propriedades operacionais, moeda base e plano do seu workspace."
-    >
-      <div className="space-y-6 max-w-4xl">
+    <div className="space-y-6 max-w-4xl">
         {/* Tab Navigation */}
         <div className="flex items-center gap-2 border-b border-border pb-2">
           <button
@@ -396,12 +385,19 @@ function SettingsPage() {
             </div>
           </div>
 
-          <div className="pt-2 flex flex-wrap items-center justify-between gap-3 text-[12px] text-muted-foreground border-t border-border mt-4">
-            </div>
+          <div className="pt-3 flex flex-wrap items-center justify-between gap-3 text-[12px] text-muted-foreground border-t border-border">
+            <span>Precisa alterar o plano ou renovar sua assinatura?</span>
+            <button
+              type="button"
+              onClick={() => setActiveTab("billing")}
+              className="text-primary hover:underline font-medium inline-flex items-center gap-1"
+            >
+              Gerenciar Faturamento & Planos <ArrowUpRight className="size-3.5" />
+            </button>
+          </div>
           </section>
         </>
       )}
     </div>
-  </AppShell>
-);
+  );
 }

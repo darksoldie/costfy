@@ -14,8 +14,7 @@ import {
   Zap,
 } from "lucide-react";
 
-import { AppShell } from "@/components/app/app-shell";
-import { WorkspaceProvider, useWorkspace } from "@/components/app/workspace-context";
+import { useWorkspace } from "@/components/app/workspace-context";
 import { CostfyMark } from "@/components/brand/costfy-mark";
 import {
   ordersQuery,
@@ -44,11 +43,7 @@ export const Route = createFileRoute("/_authenticated/brain")({
       },
     ],
   }),
-  component: () => (
-    <WorkspaceProvider>
-      <BrainPage />
-    </WorkspaceProvider>
-  ),
+  component: BrainPage,
 });
 
 interface ChatMessage {
@@ -179,11 +174,7 @@ function BrainPage() {
   }
 
   return (
-    <AppShell
-      title="Costfy Brain"
-      description="Intelligence layer: observação contínua, diagnóstico de anomalias e preparação de ações com controle humano total."
-    >
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
         {/* Coluna Esquerda: Chat Interativo (7 colunas) */}
         <section className="editorial-card flex flex-col lg:col-span-7 h-[700px] overflow-hidden">
           <header className="flex items-center justify-between border-b border-border bg-secondary/40 px-5 py-3.5">
@@ -412,6 +403,5 @@ function BrainPage() {
           )}
         </section>
       </div>
-    </AppShell>
   );
 }

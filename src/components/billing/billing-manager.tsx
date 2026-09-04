@@ -1,51 +1,49 @@
 import { useState, useEffect } from "react";
-import { Link } from "@tanstack/react-router";
 import {
   CreditCard,
   CheckCircle2,
   AlertTriangle,
-  ArrowUpRight,
-  ShieldCheck,
-  Zap,
-  Clock,
-  Sparkles,
   RefreshCw,
-  XCircle,
+  Zap,
+  ArrowUpRight,
   FileText,
+  ShieldCheck,
+  Layers,
   Users,
   LineChart,
   Boxes,
-  Layers,
+  HelpCircle,
 } from "lucide-react";
 
 import { useWorkspace } from "@/components/app/workspace-context";
 import { CostfyMark } from "@/components/brand/costfy-mark";
 import { buttonClass } from "@/lib/ui";
 import { cn } from "@/lib/utils";
-import type {
-  Plan,
-  PlanInterval,
-  Subscription,
-  SubscriptionInvoice,
-  WorkspaceUsageStats,
-  WorkspaceBillingStatus,
-} from "@/lib/billing-types";
+import { supabase } from "@/integrations/supabase/client";
+import type { Plan, PlanInterval, Subscription, WorkspaceUsageStats } from "@/lib/billing-types";
+import { resolveBillingState } from "@/lib/billing-state";
 
-interface BillingData {
+interface BillingApiResponse {
   plan: Plan;
   isTrial: boolean;
-  workspaceStatus: WorkspaceBillingStatus;
+  workspaceStatus: string;
   subscription: Subscription | null;
-  invoices: SubscriptionInvoice[];
+  invoices: Array<{
+    id: string;
+    provider_invoice_id?: string | null;
+    amount: number;
+    status: string;
+    paid_at?: string | null;
+  }>;
   usage: WorkspaceUsageStats;
 }
 
 export function BillingManager() {
   const { active } = useWorkspace();
-  const workspaceId = active?.workspace.id;
+  const workspaceId = active?.workspace.id ?? null;
 
+  const [data, setData] = useState<BillingApiResponse | null>(null);
   const [loading, setLoading] = useState(true);
-  const [data, setData] = useState<BillingData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [checkoutLoading, setCheckoutLoading] = useState<string | null>(null);
   const [cancelLoading, setCancelLoading] = useState(false);
@@ -54,17 +52,32 @@ export function BillingManager() {
   // Intervalo selecionado no modal de planos: 'monthly' ou 'annual'
   const [selectedInterval, setSelectedInterval] = useState<PlanInterval>("monthly");
   const [showPlansModal, setShowPlansModal] = useState(false);
+  const [highlightedPlan, setHighlightedPlan] = useState<string | null>(null);
 
   async function fetchBillingData() {
     if (!workspaceId) return;
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`/api/billing/subscription?workspace_id=${encodeURIComponent(workspaceId)}`);
-      if (!res.ok) {
-        throw new Error("Falha ao carregar dados de faturamento.");
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+      const headers: Record<string, string> = {
+        "x-costfy-workspace-id": workspaceId,
+      };
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
       }
-      const json = await res.json();
+
+      const res = await fetch(`/api/billing/subscription?workspace_id=${encodeURIComponent(workspaceId)}`, {
+        headers,
+      });
+
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => null);
+        throw new Error(errJson?.error || "Falha ao sincronizar dados de faturamento com o servidor.");
+      }
+
+      const json = (await res.json()) as BillingApiResponse;
       setData(json);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Erro desconhecido ao carregar faturamento.");
@@ -77,15 +90,25 @@ export function BillingManager() {
     fetchBillingData();
   }, [workspaceId]);
 
-  // Verificar se retornou do checkout com sandbox_checkout=1 ou status=approved
+  // Verificar se retornou do checkout com status de aprovado ou com intenção de plano (?plan=...)
   useEffect(() => {
     if (typeof window === "undefined") return;
     const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get("sandbox") === "true" || urlParams.get("status") === "approved") {
-      setSuccessMessage("Pagamento confirmado com sucesso no Mercado Pago! Sua assinatura está ativa.");
-      // Limpa os parâmetros da URL
+
+    if (urlParams.get("status") === "approved") {
+      setSuccessMessage("Pagamento confirmado com sucesso via Mercado Pago! Sua assinatura está ativa.");
       window.history.replaceState({}, document.title, window.location.pathname);
       fetchBillingData();
+    }
+
+    const planParam = urlParams.get("plan");
+    const intervalParam = urlParams.get("interval");
+    if (intervalParam === "annual" || intervalParam === "monthly") {
+      setSelectedInterval(intervalParam);
+    }
+    if (planParam && ["starter", "growth", "scale"].includes(planParam.toLowerCase())) {
+      setHighlightedPlan(planParam.toLowerCase());
+      setShowPlansModal(true);
     }
   }, []);
 
@@ -94,26 +117,34 @@ export function BillingManager() {
     setCheckoutLoading(planSlug);
     setError(null);
     try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+      };
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+      }
+
       const res = await fetch("/api/billing/checkout", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify({
           workspaceId,
           planSlug,
           interval,
-          email: active?.workspace.created_by ? undefined : "operacoes@costfy.com.br",
-          returnUrl: window.location.href,
+          email: active?.workspace.created_by ? undefined : "contato@costfy.com.br",
+          returnUrl: `${window.location.origin}/billing`,
         }),
       });
 
       if (!res.ok) {
-        const errJson = await res.json();
-        throw new Error(errJson.error || "Erro ao iniciar checkout.");
+        const errJson = await res.json().catch(() => null);
+        throw new Error(errJson?.error || "Erro ao iniciar checkout.");
       }
 
       const checkout = await res.json();
       if (checkout.checkoutUrl) {
-        // Redireciona para o checkout do Mercado Pago (ou sandbox)
         window.location.href = checkout.checkoutUrl;
       }
     } catch (err: unknown) {
@@ -130,14 +161,23 @@ export function BillingManager() {
 
     setCancelLoading(true);
     try {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+      };
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+      }
+
       const res = await fetch("/api/billing/cancel", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
         body: JSON.stringify({ workspaceId }),
       });
 
       if (!res.ok) throw new Error("Erro ao cancelar assinatura.");
-      setSuccessMessage("Assinatura cancelada com sucesso. Seu acesso continuará ativo até o término do período.");
+      setSuccessMessage("Assinatura cancelada com sucesso. Seu acesso continuará ativo até o término do ciclo atual.");
       fetchBillingData();
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Falha no cancelamento.");
@@ -146,26 +186,76 @@ export function BillingManager() {
     }
   }
 
-  if (loading) {
+  // 1. ESTADO DE CARREGAMENTO
+  if (loading && !data) {
     return (
-      <div className="editorial-card p-8 text-center space-y-3">
+      <div className="editorial-card p-10 text-center space-y-3 animate-fade">
         <RefreshCw className="size-6 animate-spin mx-auto text-primary" />
-        <p className="text-[13px] text-muted-foreground">Carregando dados da assinatura e limites operacionais...</p>
+        <p className="text-[13.5px] font-medium text-foreground">Carregando dados de faturamento...</p>
+        <p className="text-[12px] text-muted-foreground">Sincronizando plano oficial, limites e faturas do workspace.</p>
       </div>
     );
   }
 
-  const isReadOnly = data?.workspaceStatus === "read_only";
-  const isTrial = data?.isTrial ?? false;
+  // 2. ESTADO DE ERRO EXPLÍCITO (Erro de carregamento ≠ Assinatura expirada)
+  if (error && !data) {
+    return (
+      <div className="space-y-6 animate-fade">
+        <div className="editorial-card p-6 sm:p-8 space-y-4 border-destructive/30 bg-destructive/[0.02]">
+          <div className="flex items-start gap-3.5">
+            <div className="grid size-10 place-items-center rounded-lg bg-destructive/10 text-destructive shrink-0">
+              <AlertTriangle className="size-5" />
+            </div>
+            <div className="space-y-1.5 flex-1">
+              <h3 className="text-[15px] font-semibold text-foreground">
+                Falha ao carregar dados de faturamento
+              </h3>
+              <p className="text-[13px] text-muted-foreground leading-relaxed">
+                Não foi possível sincronizar o estado da assinatura no momento. Isso é uma instabilidade temporária na consulta e <strong>não significa que sua conta expirou</strong>. Todos os dados operacionais do workspace continuam preservados e seguros.
+              </p>
+              <p className="text-[11.5px] font-mono text-destructive/90 bg-destructive/5 p-2 rounded border border-destructive/20 mt-2">
+                {error}
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3 pt-3 border-t border-border">
+            <button
+              type="button"
+              onClick={() => fetchBillingData()}
+              className={buttonClass("primary", "sm", "gap-1.5")}
+            >
+              <RefreshCw className="size-3.5" />
+              <span>Tentar novamente</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => window.location.reload()}
+              className={buttonClass("outline", "sm")}
+            >
+              Recarregar página
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // 3. RESOLUÇÃO RIGOROSA DO ESTADO DE BILLING
+  const billingInfo = resolveBillingState({
+    workspaceStatus: data?.workspaceStatus ?? active?.workspace.status,
+    trialEndsAt: active?.workspace.trial_ends_at,
+    subscription: data?.subscription,
+  });
+
+  const isReadOnly = billingInfo.state === "READ_ONLY";
   const plan = data?.plan;
   const subscription = data?.subscription;
   const usage = data?.usage;
 
   const trialEnds = active?.workspace.trial_ends_at ? new Date(active.workspace.trial_ends_at) : null;
-  const daysLeft = trialEnds ? Math.max(0, Math.ceil((trialEnds.getTime() - Date.now()) / (1000 * 60 * 60 * 24))) : 0;
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 animate-fade">
       {/* Mensagens de Feedback */}
       {successMessage && (
         <div className="flex items-center gap-2 rounded-lg border border-success/30 bg-success/10 px-4 py-3 text-[13px] font-medium text-success">
@@ -180,15 +270,15 @@ export function BillingManager() {
         </div>
       )}
 
-      {/* Banner de Read-Only se o Trial/Assinatura expirou */}
+      {/* Banner de Read-Only se o Trial ou Assinatura realmente encerrou */}
       {isReadOnly && (
         <div className="rounded-xl border border-destructive/40 bg-destructive/10 p-5 space-y-2">
           <div className="flex items-center gap-2 text-destructive font-semibold text-[14.5px]">
             <AlertTriangle className="size-5" />
-            <span>Seu período de acesso terminou — Workspace em Modo Somente Leitura</span>
+            <span>Período de teste encerrado — Workspace em Modo Somente Leitura</span>
           </div>
           <p className="text-[12.5px] text-destructive/90 max-w-2xl leading-relaxed">
-            As criações de campanhas, automações e ações do Brain foram bloqueadas no servidor. Seus dados continuam totalmente preservados e seguros. Para reativar as operações imediatamente, escolha um plano abaixo.
+            As criações de campanhas, automações e ações do Brain foram pausadas no servidor para preservação da base de dados. Para reativar as operações imediatamente, escolha um plano abaixo.
           </p>
           <div className="pt-2">
             <button
@@ -197,42 +287,47 @@ export function BillingManager() {
               className={buttonClass("primary", "md", "gap-1.5 shadow-sm")}
             >
               <Zap className="size-4" />
-              <span>Reativar Costfy no Plano Growth</span>
+              <span>Ativar Costfy no Plano Growth</span>
             </button>
           </div>
         </div>
       )}
 
-      {/* CARD 1: Plano Atual e Status */}
+      {/* CARD 1: Plano Atual e Estado Real */}
       <section className="editorial-card p-6 space-y-5">
         <div className="flex flex-wrap items-start justify-between gap-4 border-b border-border pb-4">
           <div>
-            <div className="flex items-center gap-2.5">
+            <div className="flex flex-wrap items-center gap-2.5">
               <CostfyMark size={20} className="text-primary" />
               <h2 className="text-[16px] font-semibold text-foreground">
                 Plano Atual: {plan?.name || "Starter"}
               </h2>
-              <span
-                className={cn(
-                  "rounded-full border px-2.5 py-0.5 text-[11px] font-semibold",
-                  subscription?.status === "active"
-                    ? "border-success/30 bg-success/10 text-success"
-                    : isTrial
-                      ? "border-primary/30 bg-primary/10 text-primary"
-                      : "border-destructive/30 bg-destructive/10 text-destructive",
+
+              {/* Badge de Estado Real Padronizado */}
+              <div className="flex items-center gap-1.5">
+                <span
+                  className={cn(
+                    "rounded-full border px-2.5 py-0.5 text-[11px] font-semibold",
+                    billingInfo.badgeTone === "active" && "border-success/30 bg-success/10 text-success",
+                    billingInfo.badgeTone === "trial" && "border-primary/30 bg-primary/10 text-primary",
+                    billingInfo.badgeTone === "warning" && "border-warning/30 bg-warning/10 text-warning",
+                    billingInfo.badgeTone === "destructive" && "border-destructive/30 bg-destructive/10 text-destructive",
+                    billingInfo.badgeTone === "neutral" && "border-border bg-secondary text-muted-foreground",
+                  )}
+                >
+                  {billingInfo.badgeLabel}
+                </span>
+
+                {billingInfo.state === "TRIAL" && (
+                  <span className="rounded-full border border-primary/20 bg-primary/5 px-2 py-0.5 text-[10.5px] font-medium text-primary">
+                    {billingInfo.daysRemaining} {billingInfo.daysRemaining === 1 ? "dia restante" : "dias restantes"}
+                  </span>
                 )}
-              >
-                {subscription?.status === "active"
-                  ? "Assinatura Ativa (Mercado Pago)"
-                  : isTrial
-                    ? `Período de Testes (${daysLeft} dias restantes)`
-                    : "Plano Expirado"}
-              </span>
+              </div>
             </div>
+
             <p className="text-[12.5px] text-muted-foreground mt-1">
-              {isTrial
-                ? "Você está utilizando o período gratuito de 14 dias com acesso ao conjunto completo do produto."
-                : `Cobrança recorrente via Mercado Pago (${subscription?.billing_interval === "annual" ? "Anual" : "Mensal"}).`}
+              {billingInfo.description}
             </p>
           </div>
 
@@ -256,12 +351,14 @@ export function BillingManager() {
               {plan ? `R$ ${(plan.monthly_price / 100).toFixed(2).replace(".", ",")}/mês` : "—"}
             </p>
             <p className="mt-0.5 text-[11px] text-muted-foreground">
-              {subscription?.billing_interval === "annual" ? "Faturamento anual com desconto" : "Faturamento mensal"}
+              {subscription?.billing_interval === "annual" ? "Faturamento anual (20% OFF)" : "Faturamento mensal"}
             </p>
           </div>
 
           <div className="rounded-lg border border-border bg-surface/50 p-4">
-            <span className="type-label-subtle">Próxima Renovação</span>
+            <span className="type-label-subtle">
+              {billingInfo.state === "TRIAL" ? "Término do Teste" : "Próxima Renovação"}
+            </span>
             <p className="mt-1.5 text-[15px] font-semibold text-foreground tabular-nums">
               {subscription?.current_period_end
                 ? new Date(subscription.current_period_end).toLocaleDateString("pt-BR")
@@ -270,7 +367,11 @@ export function BillingManager() {
                   : "—"}
             </p>
             <p className="mt-0.5 text-[11px] text-muted-foreground">
-              {subscription?.cancel_at_period_end ? "Cancelamento agendado" : "Renovação automática"}
+              {billingInfo.state === "TRIAL"
+                ? "Teste de 14 dias sem cartão"
+                : subscription?.cancel_at_period_end
+                  ? "Cancelamento agendado"
+                  : "Renovação automática"}
             </p>
           </div>
 
@@ -280,12 +381,14 @@ export function BillingManager() {
               <CreditCard className="size-4 text-primary" />
               <span>Mercado Pago</span>
             </div>
-            <p className="mt-0.5 text-[11px] text-muted-foreground">Cartão de Crédito e Pix</p>
+            <p className="mt-0.5 text-[11px] text-muted-foreground">
+              Criptografia e segurança bancária
+            </p>
           </div>
 
           <div className="rounded-lg border border-border bg-surface/50 p-4">
-            <span className="type-label-subtle">Ações de Conta</span>
-            <div className="mt-2">
+            <span className="type-label-subtle">Ações da Conta</span>
+            <div className="mt-1.5">
               {subscription?.status === "active" && !subscription.cancel_at_period_end ? (
                 <button
                   type="button"
@@ -296,7 +399,9 @@ export function BillingManager() {
                   {cancelLoading ? "Processando..." : "Cancelar assinatura"}
                 </button>
               ) : (
-                <span className="text-[12px] text-muted-foreground">Sem cancelamento pendente</span>
+                <span className="text-[12px] text-muted-foreground">
+                  {billingInfo.state === "TRIAL" ? "Sem compromisso" : "Regular"}
+                </span>
               )}
             </div>
           </div>
@@ -460,16 +565,23 @@ export function BillingManager() {
 
       {/* MODAL / SEÇÃO DE ESCOLHA DE PLANOS */}
       {showPlansModal && (
-        <div className="editorial-card p-6 border-primary/30 space-y-6 bg-gradient-to-b from-card to-secondary/20">
-          <div className="flex items-center justify-between border-b border-border pb-4">
+        <div className="editorial-card p-6 border-border space-y-6 bg-surface/50">
+          <div className="flex flex-wrap items-center justify-between gap-4 border-b border-border pb-4">
             <div>
-              <h3 className="type-h2 text-foreground">Escolha o plano ideal para sua operação</h3>
+              <div className="flex items-center gap-2">
+                <h3 className="type-h2 text-foreground">Escolha o plano ideal para sua operação</h3>
+                {highlightedPlan && (
+                  <span className="rounded-full bg-primary/10 border border-primary/25 px-2.5 py-0.5 text-[11px] font-semibold text-primary capitalize">
+                    {highlightedPlan} pré-selecionado
+                  </span>
+                )}
+              </div>
               <p className="text-[13px] text-muted-foreground mt-1">
                 Transparência total: faça upgrade ou downgrade a qualquer momento via Mercado Pago.
               </p>
             </div>
-            {/* Toggle Mensal / Anual */}
-            <div className="inline-flex rounded-lg border border-border bg-surface p-1 text-[12px]">
+            {/* Toggle Mensal / Anual com 20% OFF real */}
+            <div className="inline-flex rounded-lg border border-border bg-card p-1 text-[12px]">
               <button
                 type="button"
                 onClick={() => setSelectedInterval("monthly")}
@@ -484,12 +596,12 @@ export function BillingManager() {
                 type="button"
                 onClick={() => setSelectedInterval("annual")}
                 className={cn(
-                  "rounded-md px-3 py-1 font-medium transition-colors flex items-center gap-1",
+                  "rounded-md px-3 py-1 font-medium transition-colors flex items-center gap-1.5",
                   selectedInterval === "annual" ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:text-foreground",
                 )}
               >
                 <span>Anual</span>
-                <span className="rounded bg-success/20 px-1 py-0.2 text-[10px] text-success font-bold">~16% OFF</span>
+                <span className="rounded bg-success/20 px-1.5 py-0.5 text-[10px] text-success font-bold">20% de economia</span>
               </button>
             </div>
           </div>
@@ -502,12 +614,17 @@ export function BillingManager() {
                 <p className="text-[12px] text-muted-foreground">Organize sua operação e consolide métricas.</p>
                 <div className="pt-2">
                   <span className="text-3xl font-bold text-foreground tabular-nums">
-                    {selectedInterval === "annual" ? "R$ 599" : "R$ 59,90"}
+                    {selectedInterval === "annual" ? "R$ 575" : "R$ 59,90"}
                   </span>
                   <span className="text-[12px] text-muted-foreground">
                     {selectedInterval === "annual" ? "/ano" : "/mês"}
                   </span>
                 </div>
+                {selectedInterval === "annual" && (
+                  <p className="text-[11px] text-success font-medium">
+                    20% de economia (equivalente a R$ 47,91/mês)
+                  </p>
+                )}
                 <ul className="text-[12.5px] space-y-1.5 pt-3 text-muted-foreground border-t border-border">
                   <li>• 1 workspace • 1 membro</li>
                   <li>• 50 campanhas • 5 integrações</li>
@@ -521,7 +638,7 @@ export function BillingManager() {
                 onClick={() => handleCheckout("starter", selectedInterval)}
                 className={buttonClass("outline", "md", "w-full")}
               >
-                {checkoutLoading === "starter" ? "Conectando..." : "Assinar Starter"}
+                {checkoutLoading === "starter" ? "Conectando ao Mercado Pago..." : "Assinar Starter"}
               </button>
             </div>
 
@@ -535,12 +652,17 @@ export function BillingManager() {
                 <p className="text-[12px] text-muted-foreground">Para operações que escalam tráfego pago.</p>
                 <div className="pt-2">
                   <span className="text-3xl font-bold text-foreground tabular-nums">
-                    {selectedInterval === "annual" ? "R$ 1.499" : "R$ 149,90"}
+                    {selectedInterval === "annual" ? "R$ 1.439" : "R$ 149,90"}
                   </span>
                   <span className="text-[12px] text-muted-foreground">
                     {selectedInterval === "annual" ? "/ano" : "/mês"}
                   </span>
                 </div>
+                {selectedInterval === "annual" && (
+                  <p className="text-[11px] text-success font-medium">
+                    20% de economia (equivalente a R$ 119,91/mês)
+                  </p>
+                )}
                 <ul className="text-[12.5px] space-y-1.5 pt-3 text-muted-foreground border-t border-border">
                   <li>• 1 workspace • 3 membros</li>
                   <li>• 250 campanhas • 15 integrações</li>
@@ -566,12 +688,17 @@ export function BillingManager() {
                 <p className="text-[12px] text-muted-foreground">Para múltiplos negócios e times corporativos.</p>
                 <div className="pt-2">
                   <span className="text-3xl font-bold text-foreground tabular-nums">
-                    {selectedInterval === "annual" ? "R$ 2.999" : "R$ 299,90"}
+                    {selectedInterval === "annual" ? "R$ 2.879" : "R$ 299,90"}
                   </span>
                   <span className="text-[12px] text-muted-foreground">
                     {selectedInterval === "annual" ? "/ano" : "/mês"}
                   </span>
                 </div>
+                {selectedInterval === "annual" && (
+                  <p className="text-[11px] text-success font-medium">
+                    20% de economia (equivalente a R$ 239,91/mês)
+                  </p>
+                )}
                 <ul className="text-[12.5px] space-y-1.5 pt-3 text-muted-foreground border-t border-border">
                   <li>• 3 workspaces • 10 membros</li>
                   <li>• Campanhas ilimitadas</li>
@@ -586,7 +713,7 @@ export function BillingManager() {
                 onClick={() => handleCheckout("scale", selectedInterval)}
                 className={buttonClass("outline", "md", "w-full")}
               >
-                {checkoutLoading === "scale" ? "Conectando..." : "Assinar Scale"}
+                {checkoutLoading === "scale" ? "Conectando ao Mercado Pago..." : "Assinar Scale"}
               </button>
             </div>
           </div>

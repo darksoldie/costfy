@@ -2207,6 +2207,56 @@ export type Database = {
         };
         Relationships: [];
       };
+      workspace_invitations: {
+        Row: {
+          id: string;
+          workspace_id: string;
+          email: string;
+          role: Database["public"]["Enums"]["app_role"];
+          token: string;
+          status: "pending" | "accepted" | "revoked" | "expired";
+          invited_by: string;
+          accepted_by: string | null;
+          accepted_at: string | null;
+          expires_at: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          workspace_id: string;
+          email: string;
+          role: Database["public"]["Enums"]["app_role"];
+          token: string;
+          status?: "pending" | "accepted" | "revoked" | "expired";
+          invited_by: string;
+          accepted_by?: string | null;
+          accepted_at?: string | null;
+          expires_at?: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          workspace_id?: string;
+          email?: string;
+          role?: Database["public"]["Enums"]["app_role"];
+          token?: string;
+          status?: "pending" | "accepted" | "revoked" | "expired";
+          invited_by?: string;
+          accepted_by?: string | null;
+          accepted_at?: string | null;
+          expires_at?: string;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "workspace_invitations_workspace_id_fkey";
+            columns: ["workspace_id"];
+            isOneToOne: false;
+            referencedRelation: "workspaces";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
     Views: {
       [_ in never]: never;

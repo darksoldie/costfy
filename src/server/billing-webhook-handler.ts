@@ -1,4 +1,4 @@
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { getServerSupabaseClient } from "./server-supabase";
 import { defaultBillingProvider } from "./billing-provider";
 import { BillingEngine } from "./billing-engine";
 import type { PlanInterval } from "@/lib/billing-types";
@@ -20,6 +20,8 @@ export async function handleBillingWebhookRequest(request: Request): Promise<Res
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   }
+
+  const db = getServerSupabaseClient();
 
   try {
     const bodyText = await request.text();
@@ -62,7 +64,7 @@ export async function handleBillingWebhookRequest(request: Request): Promise<Res
     const eventType = String(payload["type"] || payload["action"] || "unknown");
 
     // 3. Garantia de Idempotência via banco de dados
-    const { data: existingEvent } = await supabaseAdmin
+    const { data: existingEvent } = await db
       .from("billing_webhook_events")
       .select("id, processed")
       .eq("provider", "mercadopago")
@@ -78,7 +80,7 @@ export async function handleBillingWebhookRequest(request: Request): Promise<Res
 
     // Registrar o evento antes de processar
     if (!existingEvent) {
-      await supabaseAdmin.from("billing_webhook_events").insert({
+      await db.from("billing_webhook_events").insert({
         provider: "mercadopago",
         external_event_id: eventId,
         event_type: eventType,
@@ -87,8 +89,8 @@ export async function handleBillingWebhookRequest(request: Request): Promise<Res
       });
     }
 
-    // 4. Processar evento
-    // Cenário A: Pagamento aprovado de assinatura
+    // 4. Processar evento de acordo com a tipagem oficial do Mercado Pago
+    // Cenário A: Evento de Pagamento (Criado, Atualizado, Aprovado, Recusado)
     if (
       eventType.includes("payment") ||
       payload["action"] === "payment.created" ||
@@ -97,24 +99,24 @@ export async function handleBillingWebhookRequest(request: Request): Promise<Res
       const paymentData = (payload["data"] as Record<string, any> | undefined) || payload;
       const status = paymentData["status"];
 
-      if (status === "approved") {
-        const externalReference = paymentData["external_reference"];
-        let refParsed: { workspaceId?: string; planSlug?: string; interval?: PlanInterval } = {};
+      const externalReference = paymentData["external_reference"];
+      let refParsed: { workspaceId?: string; planSlug?: string; interval?: PlanInterval } = {};
 
-        try {
-          if (typeof externalReference === "string" && externalReference.startsWith("{")) {
-            refParsed = JSON.parse(externalReference);
-          }
-        } catch {
-          // não json
+      try {
+        if (typeof externalReference === "string" && externalReference.startsWith("{")) {
+          refParsed = JSON.parse(externalReference);
         }
+      } catch {
+        // não json
+      }
 
-        const workspaceId = refParsed.workspaceId || paymentData["metadata"]?.workspace_id;
-        const planSlug = refParsed.planSlug || paymentData["metadata"]?.plan_slug || "growth";
-        const interval = refParsed.interval || "monthly";
-        const amountCents = Math.round(Number(paymentData["transaction_amount"] || 149.9) * 100);
+      const workspaceId = refParsed.workspaceId || paymentData["metadata"]?.workspace_id;
+      const planSlug = refParsed.planSlug || paymentData["metadata"]?.plan_slug || "growth";
+      const interval = refParsed.interval || "monthly";
+      const amountCents = Math.round(Number(paymentData["transaction_amount"] || 149.9) * 100);
 
-        if (workspaceId) {
+      if (workspaceId) {
+        if (status === "approved") {
           await BillingEngine.handlePaymentSuccess({
             workspaceId,
             planSlug,
@@ -123,12 +125,61 @@ export async function handleBillingWebhookRequest(request: Request): Promise<Res
             providerPaymentId: String(paymentData["id"] || eventId),
             payerEmail: paymentData["payer"]?.email,
           });
+        } else if (status === "rejected" || status === "cancelled") {
+          await BillingEngine.handlePaymentFailure({
+            workspaceId,
+            subscriptionId: String(paymentData["id"] || eventId),
+            reason: paymentData["status_detail"] || "Pagamento recusado ou cancelado no Mercado Pago",
+          });
         }
       }
     }
 
-    // 5. Marcar evento como processado
-    await supabaseAdmin
+    // Cenário B: Evento de Assinatura Recorrente (Preapproval)
+    if (
+      eventType.includes("preapproval") ||
+      eventType.includes("subscription") ||
+      payload["action"] === "created" ||
+      payload["action"] === "updated"
+    ) {
+      const preapprovalData = (payload["data"] as Record<string, any> | undefined) || payload;
+      const status = preapprovalData["status"];
+      const externalReference = preapprovalData["external_reference"];
+      let refParsed: { workspaceId?: string; planSlug?: string; interval?: PlanInterval } = {};
+
+      try {
+        if (typeof externalReference === "string" && externalReference.startsWith("{")) {
+          refParsed = JSON.parse(externalReference);
+        }
+      } catch {
+        // não json
+      }
+
+      const workspaceId = refParsed.workspaceId || preapprovalData["metadata"]?.workspace_id;
+      const planSlug = refParsed.planSlug || preapprovalData["metadata"]?.plan_slug || "growth";
+      const interval = refParsed.interval || (preapprovalData["auto_recurring"]?.frequency === 12 ? "annual" : "monthly");
+      const amountCents = Math.round(
+        Number(preapprovalData["auto_recurring"]?.transaction_amount || 149.9) * 100,
+      );
+
+      if (workspaceId) {
+        if (status === "authorized") {
+          await BillingEngine.handlePaymentSuccess({
+            workspaceId,
+            planSlug,
+            interval,
+            amountCents,
+            providerSubscriptionId: String(preapprovalData["id"] || eventId),
+            payerEmail: preapprovalData["payer_email"],
+          });
+        } else if (status === "cancelled") {
+          await BillingEngine.cancelSubscription(workspaceId);
+        }
+      }
+    }
+
+    // 5. Marcar evento como processado para garantir idempotência estrita
+    await db
       .from("billing_webhook_events")
       .update({
         processed: true,

@@ -1,5 +1,7 @@
 import { createFileRoute, Outlet, redirect } from "@tanstack/react-router";
 
+import { AppShell } from "@/components/app/app-shell";
+import { WorkspaceProvider } from "@/components/app/workspace-context";
 import { supabase } from "@/integrations/supabase/client";
 
 /**
@@ -17,5 +19,11 @@ export const Route = createFileRoute("/_authenticated")({
     }
     return { userId: data.session.user.id };
   },
-  component: () => <Outlet />,
+  component: () => (
+    <WorkspaceProvider>
+      <AppShell>
+        <Outlet />
+      </AppShell>
+    </WorkspaceProvider>
+  ),
 });

@@ -1,8 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
 
-import { AppShell } from "@/components/app/app-shell";
-import { WorkspaceProvider } from "@/components/app/workspace-context";
+
 import { TextField } from "@/components/ui-kit/text-field";
 import { buttonClass, inputClass, selectClass } from "@/lib/ui";
 import { useCreateWorkspace, type BusinessType } from "@/lib/workspaces";
@@ -23,11 +22,7 @@ export const Route = createFileRoute("/_authenticated/onboarding")({
       },
     ],
   }),
-  component: () => (
-    <WorkspaceProvider>
-      <OnboardingPage />
-    </WorkspaceProvider>
-  ),
+  component: OnboardingPage,
 });
 
 const BUSINESS_TYPES: ReadonlyArray<{ value: BusinessType; label: string }> = [
@@ -58,11 +53,7 @@ function OnboardingPage() {
   }
 
   return (
-    <AppShell
-      title="Configuração do Workspace"
-      description="Inicialize o ambiente operacional do seu negócio digital."
-    >
-      <div className="max-w-xl mx-auto pt-4 sm:pt-8">
+    <div className="max-w-xl mx-auto pt-4 sm:pt-8">
         <div className="editorial-card p-6 sm:p-8 space-y-6 shadow-[var(--shadow-raised)]">
           <div className="space-y-1.5 border-b border-border pb-4">
             <h2 className="type-h2 text-foreground">Novo Workspace</h2>
@@ -115,6 +106,5 @@ function OnboardingPage() {
           </form>
         </div>
       </div>
-    </AppShell>
   );
 }

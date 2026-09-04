@@ -136,3 +136,131 @@ export function useRemoveMember(workspaceId: string | null) {
     },
   });
 }
+
+export interface WorkspaceInvitation {
+  id: string;
+  workspaceId: string;
+  email: string;
+  role: AppRole;
+  token: string;
+  status: "pending" | "accepted" | "revoked" | "expired";
+  expiresAt: string;
+  createdAt: string;
+}
+
+export const invitationsQuery = (workspaceId: string | null) =>
+  queryOptions({
+    queryKey: ["workspace-invitations", workspaceId],
+    enabled: Boolean(workspaceId),
+    staleTime: 15_000,
+    queryFn: async (): Promise<WorkspaceInvitation[]> => {
+      if (!workspaceId) return [];
+
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+      const headers: Record<string, string> = {};
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+      }
+
+      const res = await fetch(`/api/invitations/list?workspace_id=${encodeURIComponent(workspaceId)}`, {
+        headers,
+      });
+
+      if (!res.ok) {
+        // Se a tabela ainda não existir no ambiente, retorna lista vazia segura
+        return [];
+      }
+
+      const json = (await res.json()) as {
+        invitations: Array<{
+          id: string;
+          workspace_id: string;
+          email: string;
+          role: AppRole;
+          token: string;
+          status: "pending" | "accepted" | "revoked" | "expired";
+          expires_at: string;
+          created_at: string;
+        }>;
+      };
+
+      return (json.invitations || []).map((inv) => ({
+        id: inv.id,
+        workspaceId: inv.workspace_id,
+        email: inv.email,
+        role: inv.role,
+        token: inv.token,
+        status:
+          inv.status === "pending" && new Date(inv.expires_at).getTime() < Date.now()
+            ? "expired"
+            : inv.status,
+        expiresAt: inv.expires_at,
+        createdAt: inv.created_at,
+      }));
+    },
+  });
+
+export function useCreateInvitation(workspaceId: string | null) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ email, role }: { email: string; role: AppRole }) => {
+      if (!workspaceId) throw new Error("Workspace não selecionado.");
+
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+      }
+
+      const res = await fetch("/api/invitations/create", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ workspaceId, email, role }),
+      });
+
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => null);
+        throw new Error(errJson?.error || "Erro ao gerar convite.");
+      }
+
+      return (await res.json()) as { invitation: unknown; inviteUrl: string };
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["workspace-invitations", workspaceId] });
+    },
+  });
+}
+
+export function useRevokeInvitation(workspaceId: string | null) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (invitationId: string) => {
+      if (!workspaceId) throw new Error("Workspace não selecionado.");
+
+      const { data: sessionData } = await supabase.auth.getSession();
+      const token = sessionData.session?.access_token;
+      const headers: Record<string, string> = { "Content-Type": "application/json" };
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+      }
+
+      const res = await fetch("/api/invitations/revoke", {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ workspaceId, invitationId }),
+      });
+
+      if (!res.ok) {
+        const errJson = await res.json().catch(() => null);
+        throw new Error(errJson?.error || "Erro ao revogar convite.");
+      }
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ["workspace-invitations", workspaceId] });
+    },
+  });
+}

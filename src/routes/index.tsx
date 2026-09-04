@@ -35,10 +35,11 @@ import {
   PieChart,
   FileText,
   Settings,
-  Sparkles,
 } from "lucide-react";
+import { motion } from "motion/react";
 
 import { CostfyLogo, CostfyMark } from "@/components/brand/costfy-mark";
+import { AnimatedNumber } from "@/components/ui/animated-number";
 import { buttonClass } from "@/lib/ui";
 import { cn } from "@/lib/utils";
 
@@ -214,8 +215,13 @@ function LandingPage() {
           <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
             {/* Top Row: Headline à esquerda + 4 Métricas à direita */}
             <div className="flex flex-col lg:flex-row items-center justify-between gap-8 lg:gap-12">
-              {/* Esquerda: Headline, Subheadline, CTAs e Microcopy */}
-              <div className="w-full lg:w-[42%] space-y-4">
+              {/* Esquerda: Headline, Subheadline, CTAs e Microcopy com Motion Stagger */}
+              <motion.div
+                initial={{ opacity: 0, y: 12 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+                className="w-full lg:w-[42%] space-y-4"
+              >
                 <h1 className="text-3xl sm:text-4xl lg:text-[2.85rem] xl:text-[3.15rem] font-bold tracking-tight text-foreground leading-[1.12]">
                   Entenda o que está<br />
                   acontecendo.<br />
@@ -224,20 +230,20 @@ function LandingPage() {
 
                 <p className="text-sm sm:text-base text-muted-foreground leading-relaxed">
                   Marketing, vendas e finanças conectados<br className="hidden sm:inline" />
-                  em um único sistema.
+                  em um único sistema operacional.
                 </p>
 
                 <div className="flex flex-wrap items-center gap-3 pt-1">
                   <Link
                     to="/signup"
-                    className="inline-flex h-10 sm:h-11 items-center justify-center gap-2 rounded-lg bg-primary px-5 sm:px-6 text-xs sm:text-sm font-semibold text-primary-foreground shadow-xs hover:bg-primary/90 transition-colors cursor-pointer"
+                    className="inline-flex h-10 sm:h-11 items-center justify-center gap-2 rounded-lg bg-primary px-5 sm:px-6 text-xs sm:text-sm font-semibold text-primary-foreground shadow-xs hover:bg-primary/90 active:scale-[0.98] transition-all cursor-pointer"
                   >
                     <span>Começar agora</span>
                     <ArrowRight className="size-4" />
                   </Link>
                   <a
                     href="#showcase"
-                    className="inline-flex h-10 sm:h-11 items-center justify-center rounded-lg border border-border/80 bg-background px-5 sm:px-6 text-xs sm:text-sm font-medium text-foreground hover:bg-muted/60 transition-colors shadow-2xs cursor-pointer"
+                    className="inline-flex h-10 sm:h-11 items-center justify-center rounded-lg border border-border/80 bg-background px-5 sm:px-6 text-xs sm:text-sm font-medium text-foreground hover:bg-muted/60 active:scale-[0.98] transition-all shadow-2xs cursor-pointer"
                   >
                     Ver produto
                   </a>
@@ -247,12 +253,17 @@ function LandingPage() {
                   <CheckCircle2 className="size-4 text-emerald-500 shrink-0" />
                   <span>14 dias grátis · sem cartão</span>
                 </div>
-              </div>
+              </motion.div>
 
-              {/* Direita: 4 Metric Cards em linha horizontal */}
-              <div className="w-full lg:w-[58%] grid grid-cols-2 sm:grid-cols-4 gap-3 xl:gap-3.5">
+              {/* Direita: 4 Metric Cards com AnimatedNumber */}
+              <motion.div
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: 0.1, ease: [0.22, 1, 0.36, 1] }}
+                className="w-full lg:w-[58%] grid grid-cols-2 sm:grid-cols-4 gap-3 xl:gap-3.5"
+              >
                 {/* Card 1: Receita Bruta */}
-                <div className="rounded-xl border border-border/80 bg-card p-3.5 sm:p-4 shadow-xs space-y-2">
+                <div className="rounded-xl border border-border/80 bg-card p-3.5 sm:p-4 shadow-xs space-y-2 hover:border-border-strong transition-all">
                   <div className="flex items-center gap-2">
                     <div className="size-7 rounded-lg bg-blue-500/10 text-primary flex items-center justify-center shrink-0">
                       <DollarSign className="size-4" />
@@ -262,7 +273,10 @@ function LandingPage() {
                     </span>
                   </div>
                   <div className="text-xl sm:text-2xl font-bold tracking-tight text-foreground font-sans">
-                    R$ 284.920
+                    <AnimatedNumber
+                      value={284920}
+                      format={(n) => `R$ ${n.toLocaleString("pt-BR")}`}
+                    />
                   </div>
                   <div className="flex items-center gap-1 text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
                     <TrendingUp className="size-3 shrink-0" />
@@ -272,7 +286,7 @@ function LandingPage() {
                 </div>
 
                 {/* Card 2: Lucro Líquido */}
-                <div className="rounded-xl border border-border/80 bg-card p-3.5 sm:p-4 shadow-xs space-y-2">
+                <div className="rounded-xl border border-border/80 bg-card p-3.5 sm:p-4 shadow-xs space-y-2 hover:border-border-strong transition-all">
                   <div className="flex items-center gap-2">
                     <div className="size-7 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
                       <Wallet className="size-4" />
@@ -282,7 +296,10 @@ function LandingPage() {
                     </span>
                   </div>
                   <div className="text-xl sm:text-2xl font-bold tracking-tight text-foreground font-sans">
-                    R$ 94.130
+                    <AnimatedNumber
+                      value={94130}
+                      format={(n) => `R$ ${n.toLocaleString("pt-BR")}`}
+                    />
                   </div>
                   <div className="flex items-center gap-1 text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
                     <TrendingUp className="size-3 shrink-0" />
@@ -292,9 +309,9 @@ function LandingPage() {
                 </div>
 
                 {/* Card 3: ROAS Consolidado */}
-                <div className="rounded-xl border border-border/80 bg-card p-3.5 sm:p-4 shadow-xs space-y-2">
+                <div className="rounded-xl border border-border/80 bg-card p-3.5 sm:p-4 shadow-xs space-y-2 hover:border-border-strong transition-all">
                   <div className="flex items-center gap-2">
-                    <div className="size-7 rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
+                    <div className="size-7 rounded-lg bg-blue-500/10 text-primary flex items-center justify-center shrink-0">
                       <BarChart3 className="size-4" />
                     </div>
                     <span className="text-xs font-medium text-muted-foreground truncate">
@@ -302,7 +319,10 @@ function LandingPage() {
                     </span>
                   </div>
                   <div className="text-xl sm:text-2xl font-bold tracking-tight text-foreground font-sans">
-                    4,16x
+                    <AnimatedNumber
+                      value={4.16}
+                      format={(n) => `${n.toFixed(2)}x`}
+                    />
                   </div>
                   <div className="text-[11px] font-medium text-muted-foreground">
                     Meta: 4,2x
@@ -310,9 +330,9 @@ function LandingPage() {
                 </div>
 
                 {/* Card 4: Investimento */}
-                <div className="rounded-xl border border-border/80 bg-card p-3.5 sm:p-4 shadow-xs space-y-2">
+                <div className="rounded-xl border border-border/80 bg-card p-3.5 sm:p-4 shadow-xs space-y-2 hover:border-border-strong transition-all">
                   <div className="flex items-center gap-2">
-                    <div className="size-7 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+                    <div className="size-7 rounded-lg bg-destructive/10 text-destructive flex items-center justify-center shrink-0">
                       <TrendingDown className="size-4" />
                     </div>
                     <span className="text-xs font-medium text-muted-foreground truncate">
@@ -320,19 +340,27 @@ function LandingPage() {
                     </span>
                   </div>
                   <div className="text-xl sm:text-2xl font-bold tracking-tight text-foreground font-sans">
-                    R$ 68.400
+                    <AnimatedNumber
+                      value={68400}
+                      format={(n) => `R$ ${n.toLocaleString("pt-BR")}`}
+                    />
                   </div>
-                  <div className="flex items-center gap-1 text-[11px] font-medium text-rose-500 dark:text-rose-400">
+                  <div className="flex items-center gap-1 text-[11px] font-medium text-destructive">
                     <TrendingDown className="size-3 shrink-0" />
                     <span>4,6%</span>
                     <span className="text-muted-foreground font-normal">vs 7 dias anteriores</span>
                   </div>
                 </div>
-              </div>
+              </motion.div>
             </div>
 
             {/* Middle Row: Dashboard Window + Painel Lateral do Brain */}
-            <div className="mt-8 flex flex-col lg:flex-row items-center gap-6 lg:gap-8">
+            <motion.div
+              initial={{ opacity: 0, y: 24 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.2, ease: [0.22, 1, 0.36, 1] }}
+              className="mt-8 flex flex-col lg:flex-row items-center gap-6 lg:gap-8"
+            >
               {/* Janela Principal do Dashboard (Cockpit) */}
               <div className="w-full lg:flex-1 min-w-0 rounded-2xl border border-border/80 bg-card shadow-2xl shadow-black/[0.04] overflow-hidden">
                 {/* Barra do Navegador */}
@@ -395,7 +423,7 @@ function LandingPage() {
                           <span>Automações</span>
                         </div>
                         <div className="flex items-center gap-2.5 rounded-md text-slate-400 hover:text-white px-2.5 py-1.5 transition-colors">
-                          <Sparkles className="size-3.5" />
+                          <CostfyMark size={14} />
                           <span>Brain</span>
                         </div>
                       </nav>
@@ -808,7 +836,7 @@ function LandingPage() {
                   </div>
                 </div>
               </div>
-            </div>
+            </motion.div>
 
             {/* Base da Hero: Conectado às Principais Plataformas */}
             <div className="mt-12 sm:mt-16 text-center space-y-5">

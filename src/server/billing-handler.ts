@@ -1,4 +1,4 @@
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { getServerSupabaseClient } from "./server-supabase";
 import { BillingEngine } from "./billing-engine";
 import { defaultBillingProvider } from "./billing-provider";
 import { UsageEngine } from "@/lib/usage-engine";
@@ -17,19 +17,26 @@ export async function handleBillingRequest(request: Request): Promise<Response> 
 
   const url = new URL(request.url);
   const endpoint = url.pathname.replace("/api/billing", "");
+  const authHeader = request.headers.get("Authorization");
 
   try {
+    const db = getServerSupabaseClient(authHeader);
+
     // 1. GET /api/billing/plans
     if (endpoint === "/plans" && request.method === "GET") {
-      const { data: plans, error } = await supabaseAdmin
+      const { data: plans, error } = await db
         .from("plans")
         .select("*, plan_entitlements(*), plan_limits(*)")
         .eq("is_active", true)
         .order("display_order", { ascending: true });
 
-      if (error) throw error;
+      if (error) {
+        console.warn("[handleBillingRequest] Erro ao buscar planos do banco, usando catálogo canônico:", error);
+      }
 
-      return new Response(JSON.stringify({ plans: plans || [] }), {
+      const resolvedPlans = (plans && plans.length > 0) ? plans : BillingEngine.getCanonicalPlans();
+
+      return new Response(JSON.stringify({ plans: resolvedPlans }), {
         status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -47,29 +54,44 @@ export async function handleBillingRequest(request: Request): Promise<Response> 
         );
       }
 
-      const { plan, isTrial, status } = await BillingEngine.getWorkspacePlan(workspaceId);
-      const subscription = await BillingEngine.getWorkspaceSubscription(workspaceId);
+      const { plan, isTrial, status } = await BillingEngine.getWorkspacePlan(workspaceId, authHeader);
+      const subscription = await BillingEngine.getWorkspaceSubscription(workspaceId, authHeader);
 
-      // Buscar faturas recentes
-      const { data: invoices } = await supabaseAdmin
-        .from("subscription_invoices")
-        .select("*")
-        .eq("workspace_id", workspaceId)
-        .order("created_at", { ascending: false })
-        .limit(10);
+      // Buscar faturas recentes de forma segura
+      let invoices: unknown[] = [];
+      try {
+        const { data } = await db
+          .from("subscription_invoices")
+          .select("*")
+          .eq("workspace_id", workspaceId)
+          .order("created_at", { ascending: false })
+          .limit(10);
+        if (data) invoices = data;
+      } catch (e) {
+        console.warn("[handleBillingRequest] Não foi possível carregar faturas:", e);
+      }
 
       // Contar recursos para o Usage Engine
-      const [membersRes, campaignsRes, integrationsRes, automationsRes] = await Promise.all([
-        supabaseAdmin.from("workspace_members").select("id", { count: "exact", head: true }).eq("workspace_id", workspaceId),
-        supabaseAdmin.from("campaigns").select("id", { count: "exact", head: true }).eq("workspace_id", workspaceId),
-        supabaseAdmin.from("integrations").select("id", { count: "exact", head: true }).eq("workspace_id", workspaceId),
-        supabaseAdmin.from("automations").select("id", { count: "exact", head: true }).eq("workspace_id", workspaceId),
-      ]);
+      let membersCount = 1;
+      let campaignsCount = 0;
+      let integrationsCount = 0;
+      let automationsCount = 0;
 
-      const membersCount = membersRes.count || 1;
-      const campaignsCount = campaignsRes.count || 0;
-      const integrationsCount = integrationsRes.count || 0;
-      const automationsCount = automationsRes.count || 0;
+      try {
+        const [membersRes, campaignsRes, integrationsRes, automationsRes] = await Promise.all([
+          db.from("workspace_members").select("id", { count: "exact", head: true }).eq("workspace_id", workspaceId),
+          db.from("campaigns").select("id", { count: "exact", head: true }).eq("workspace_id", workspaceId),
+          db.from("integrations").select("id", { count: "exact", head: true }).eq("workspace_id", workspaceId),
+          db.from("automations").select("id", { count: "exact", head: true }).eq("workspace_id", workspaceId),
+        ]);
+
+        membersCount = membersRes.count || 1;
+        campaignsCount = campaignsRes.count || 0;
+        integrationsCount = integrationsRes.count || 0;
+        automationsCount = automationsRes.count || 0;
+      } catch (e) {
+        console.warn("[handleBillingRequest] Não foi possível calcular contagens de uso completas:", e);
+      }
 
       const usage: WorkspaceUsageStats = {
         workspaces: UsageEngine.calculateUsage(1, UsageEngine.getLimit({ planSlug: plan.slug, isTrial, resourceKey: "workspaces" })),
@@ -87,7 +109,7 @@ export async function handleBillingRequest(request: Request): Promise<Response> 
           isTrial,
           workspaceStatus: status,
           subscription,
-          invoices: invoices || [],
+          invoices,
           usage,
         }),
         { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
@@ -111,22 +133,23 @@ export async function handleBillingRequest(request: Request): Promise<Response> 
         );
       }
 
-      const { data: plan } = await supabaseAdmin
-        .from("plans")
-        .select("*")
-        .eq("slug", body.planSlug)
-        .single();
+      const plan = await BillingEngine.resolvePlan(body.planSlug, authHeader);
 
       if (!plan) {
-        return new Response(JSON.stringify({ error: "Plano inválido." }), {
-          status: 404,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        });
+        return new Response(
+          JSON.stringify({
+            error: `O plano "${body.planSlug}" não foi encontrado. Planos oficiais disponíveis: Starter, Growth, Scale.`,
+          }),
+          {
+            status: 404,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          },
+        );
       }
 
       const amountCents = body.interval === "annual" ? plan.annual_price : plan.monthly_price;
       const baseHost = url.origin || "http://localhost:8080";
-      const returnUrl = body.returnUrl || `${baseHost}/settings/billing`;
+      const returnUrl = body.returnUrl || `${baseHost}/billing`;
 
       const checkout = await defaultBillingProvider.createCheckout({
         workspaceId: body.workspaceId,
@@ -155,7 +178,7 @@ export async function handleBillingRequest(request: Request): Promise<Response> 
         });
       }
 
-      const success = await BillingEngine.cancelSubscription(body.workspaceId);
+      const success = await BillingEngine.cancelSubscription(body.workspaceId, authHeader);
       return new Response(JSON.stringify({ success }), {
         status: 200,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -167,8 +190,8 @@ export async function handleBillingRequest(request: Request): Promise<Response> 
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (err: unknown) {
-    console.error("[handleBillingRequest] Erro:", err);
-    const message = err instanceof Error ? err.message : "Erro interno no servidor de billing.";
+    console.error("[handleBillingRequest] Erro capturado:", err);
+    const message = err instanceof Error ? err.message : "Erro interno no processamento de billing.";
     return new Response(JSON.stringify({ error: message }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },

@@ -12,8 +12,7 @@ import {
   Bot,
 } from "lucide-react";
 
-import { AppShell } from "@/components/app/app-shell";
-import { WorkspaceProvider, useWorkspace } from "@/components/app/workspace-context";
+import { useWorkspace } from "@/components/app/workspace-context";
 import { supabase } from "@/integrations/supabase/client";
 import { inputClass } from "@/lib/ui";
 import { cn } from "@/lib/utils";
@@ -29,11 +28,7 @@ export const Route = createFileRoute("/_authenticated/audit")({
       },
     ],
   }),
-  component: () => (
-    <WorkspaceProvider>
-      <AuditPage />
-    </WorkspaceProvider>
-  ),
+  component: AuditPage,
 });
 
 interface AuditLogEntry {
@@ -97,11 +92,7 @@ function AuditPage() {
   });
 
   return (
-    <AppShell
-      title="Auditoria"
-      description="Trilha de conformidade e segurança: registro de toda e qualquer mutação realizada por operadores, integrações ou pelo Costfy Brain."
-    >
-      <div className="space-y-6">
+    <div className="space-y-6">
         {/* Barra de Busca e Filtro */}
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="relative flex-1 max-w-sm">
@@ -217,6 +208,5 @@ function AuditPage() {
           </div>
         )}
       </div>
-    </AppShell>
   );
 }

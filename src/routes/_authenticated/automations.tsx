@@ -12,8 +12,8 @@ import {
   Layers,
 } from "lucide-react";
 
-import { AppShell } from "@/components/app/app-shell";
-import { WorkspaceProvider, useWorkspace } from "@/components/app/workspace-context";
+import { AppShellActions } from "@/components/app/app-shell";
+import { useWorkspace } from "@/components/app/workspace-context";
 import { supabase } from "@/integrations/supabase/client";
 import { buttonClass, inputClass } from "@/lib/ui";
 import { cn } from "@/lib/utils";
@@ -29,11 +29,7 @@ export const Route = createFileRoute("/_authenticated/automations")({
       },
     ],
   }),
-  component: () => (
-    <WorkspaceProvider>
-      <AutomationsPage />
-    </WorkspaceProvider>
-  ),
+  component: AutomationsPage,
 });
 
 interface AutomationItem {
@@ -139,10 +135,8 @@ function AutomationsPage() {
   }
 
   return (
-    <AppShell
-      title="Automações"
-      description="Regras operacionais com proteção: Trigger → Condition → Action, sempre respeitando guardrails."
-      actions={
+    <>
+      <AppShellActions>
         <div className="flex items-center gap-2">
           <button
             type="button"
@@ -159,11 +153,10 @@ function AutomationsPage() {
             className={buttonClass("primary", "sm", "gap-1.5")}
           >
             <Plus className="size-3.5" />
-            Nova automação
+            Nova regra
           </button>
         </div>
-      }
-    >
+      </AppShellActions>
       <div className="space-y-6">
         {evalResult && (
           <div
@@ -370,6 +363,6 @@ function AutomationsPage() {
           </div>
         </div>
       )}
-    </AppShell>
+    </>
   );
 }

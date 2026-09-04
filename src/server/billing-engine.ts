@@ -1,4 +1,4 @@
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { getServerSupabaseClient } from "./server-supabase";
 import type {
   Plan,
   PlanInterval,
@@ -8,79 +8,210 @@ import type {
   WorkspaceBillingStatus,
 } from "@/lib/billing-types";
 
+export const CANONICAL_PLANS: Record<string, Plan> = {
+  starter: {
+    id: "00000000-0000-0000-0000-000000000001",
+    slug: "starter",
+    name: "Starter",
+    description: "Para quem está organizando a operação e consolidando métricas.",
+    monthly_price: 5990,
+    annual_price: 57500, // R$ 575,00/ano
+    currency: "BRL",
+    is_public: true,
+    is_active: true,
+    display_order: 1,
+    created_at: "2026-09-01T00:00:00Z",
+    updated_at: "2026-09-03T00:00:00Z",
+  },
+  growth: {
+    id: "00000000-0000-0000-0000-000000000002",
+    slug: "growth",
+    name: "Growth",
+    description: "Para operações que escalam tráfego pago e necessitam de DRE e atribuição completa.",
+    monthly_price: 14990,
+    annual_price: 143900, // R$ 1.439,00/ano
+    currency: "BRL",
+    is_public: true,
+    is_active: true,
+    display_order: 2,
+    created_at: "2026-09-01T00:00:00Z",
+    updated_at: "2026-09-03T00:00:00Z",
+  },
+  scale: {
+    id: "00000000-0000-0000-0000-000000000003",
+    slug: "scale",
+    name: "Scale",
+    description: "Para múltiplos negócios e times corporativos com automações de alto volume.",
+    monthly_price: 29990,
+    annual_price: 287900, // R$ 2.879,00/ano
+    currency: "BRL",
+    is_public: true,
+    is_active: true,
+    display_order: 3,
+    created_at: "2026-09-01T00:00:00Z",
+    updated_at: "2026-09-03T00:00:00Z",
+  },
+  enterprise: {
+    id: "00000000-0000-0000-0000-000000000004",
+    slug: "enterprise",
+    name: "Enterprise",
+    description: "Soluções sob medida para grandes marcas, agências e ecossistemas complexos.",
+    monthly_price: 0,
+    annual_price: 0,
+    currency: "BRL",
+    is_public: true,
+    is_active: true,
+    display_order: 4,
+    created_at: "2026-09-01T00:00:00Z",
+    updated_at: "2026-09-03T00:00:00Z",
+  },
+};
+
 export const BillingEngine = {
+  /**
+   * Instancia cliente seguro para o servidor (service_role ou RLS com Bearer token).
+   */
+  getDb(authHeader?: string | null) {
+    return getServerSupabaseClient(authHeader);
+  },
+
+  /**
+   * Retorna os planos canônicos da plataforma com ordenação oficial.
+   */
+  getCanonicalPlans(): Plan[] {
+    return Object.values(CANONICAL_PLANS).sort((a, b) => a.display_order - b.display_order);
+  },
+
+  /**
+   * Resolve um plano por slug a partir do banco de dados com fallback para o catálogo canônico oficial.
+   * Garante que Starter, Growth, Scale e Enterprise sejam sempre identificáveis.
+   */
+  async resolvePlan(slug: string, authHeader?: string | null): Promise<Plan | null> {
+    if (!slug) return null;
+    const normalized = slug.toLowerCase().trim();
+
+    try {
+      const db = this.getDb(authHeader);
+      const { data: dbPlan } = await db
+        .from("plans")
+        .select("*")
+        .eq("slug", normalized)
+        .maybeSingle();
+
+      if (dbPlan) {
+        return dbPlan as Plan;
+      }
+    } catch (err) {
+      console.warn("[BillingEngine] Falha ao consultar tabela plans, usando catálogo canônico:", err);
+    }
+
+    return CANONICAL_PLANS[normalized] ?? null;
+  },
+
   /**
    * Busca a assinatura ativa ou mais recente de um workspace.
    */
-  async getWorkspaceSubscription(workspaceId: string): Promise<Subscription | null> {
-    const { data, error } = await supabaseAdmin
-      .from("subscriptions")
-      .select("*, plan:plans(*)")
-      .eq("workspace_id", workspaceId)
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle();
+  async getWorkspaceSubscription(workspaceId: string, authHeader?: string | null): Promise<Subscription | null> {
+    try {
+      const db = this.getDb(authHeader);
+      const { data, error } = await db
+        .from("subscriptions")
+        .select("*, plan:plans(*)")
+        .eq("workspace_id", workspaceId)
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
 
-    if (error) {
-      console.error("[BillingEngine] Erro ao buscar assinatura:", error);
+      if (error) {
+        console.error("[BillingEngine] Erro ao buscar assinatura:", error);
+        return null;
+      }
+
+      return (data as unknown as Subscription) ?? null;
+    } catch (err) {
+      console.error("[BillingEngine] Falha de conexão ao buscar assinatura:", err);
       return null;
     }
-
-    return (data as unknown as Subscription) ?? null;
   },
 
   /**
    * Busca o plano atualmente associado ao workspace.
    * Se não houver assinatura paga, assume o plano Starter em trial.
    */
-  async getWorkspacePlan(workspaceId: string): Promise<{ plan: Plan; isTrial: boolean; status: WorkspaceBillingStatus }> {
-    const { data: workspace } = await supabaseAdmin
-      .from("workspaces")
-      .select("status, trial_ends_at")
-      .eq("id", workspaceId)
-      .single();
+  async getWorkspacePlan(
+    workspaceId: string,
+    authHeader?: string | null,
+  ): Promise<{ plan: Plan; isTrial: boolean; status: WorkspaceBillingStatus }> {
+    try {
+      const db = this.getDb(authHeader);
+      const { data: workspace } = await db
+        .from("workspaces")
+        .select("status, trial_ends_at")
+        .eq("id", workspaceId)
+        .maybeSingle();
 
-    const currentStatus = (workspace?.status as WorkspaceBillingStatus) || "trial";
-    const trialEndsAt = workspace?.trial_ends_at ? new Date(workspace.trial_ends_at) : new Date();
-    const isTrial = currentStatus === "trial" && trialEndsAt.getTime() > Date.now();
+      const currentStatus = (workspace?.status as WorkspaceBillingStatus) || "trial";
+      const trialEndsAt = workspace?.trial_ends_at ? new Date(workspace.trial_ends_at) : new Date();
+      const isTrial = currentStatus === "trial" && trialEndsAt.getTime() > Date.now();
 
-    const subscription = await this.getWorkspaceSubscription(workspaceId);
+      const subscription = await this.getWorkspaceSubscription(workspaceId, authHeader);
 
-    if (subscription && subscription.plan) {
+      if (subscription && subscription.plan) {
+        return {
+          plan: subscription.plan,
+          isTrial: false,
+          status: currentStatus,
+        };
+      }
+
+      // Busca o plano starter por default
+      const { data: starterPlan } = await db
+        .from("plans")
+        .select("*")
+        .eq("slug", "starter")
+        .maybeSingle();
+
+      const defaultPlan: Plan = (starterPlan as Plan) || {
+        id: "00000000-0000-0000-0000-000000000001",
+        slug: "starter",
+        name: "Starter",
+        description: "Plano essencial",
+        monthly_price: 5990,
+        annual_price: 57500, // R$ 575,00/ano com 20% OFF
+        currency: "BRL",
+        is_public: true,
+        is_active: true,
+        display_order: 1,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      };
+
       return {
-        plan: subscription.plan,
-        isTrial: false,
+        plan: defaultPlan,
+        isTrial,
         status: currentStatus,
       };
+    } catch (err) {
+      console.error("[BillingEngine] Falha ao resolver plano do workspace, retornando default seguro:", err);
+      return {
+        plan: {
+          id: "00000000-0000-0000-0000-000000000001",
+          slug: "starter",
+          name: "Starter",
+          description: "Plano essencial",
+          monthly_price: 5990,
+          annual_price: 57500,
+          currency: "BRL",
+          is_public: true,
+          is_active: true,
+          display_order: 1,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        },
+        isTrial: true,
+        status: "trial",
+      };
     }
-
-    // Busca o plano starter por default
-    const { data: starterPlan } = await supabaseAdmin
-      .from("plans")
-      .select("*")
-      .eq("slug", "starter")
-      .maybeSingle();
-
-    const defaultPlan: Plan = (starterPlan as Plan) || {
-      id: "00000000-0000-0000-0000-000000000001",
-      slug: "starter",
-      name: "Starter",
-      description: "Plano essencial",
-      monthly_price: 5990,
-      annual_price: 59900,
-      currency: "BRL",
-      is_public: true,
-      is_active: true,
-      display_order: 1,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    };
-
-    return {
-      plan: defaultPlan,
-      isTrial,
-      status: currentStatus,
-    };
   },
 
   /**
@@ -95,7 +226,7 @@ export const BillingEngine = {
     providerPaymentId?: string;
     providerInvoiceId?: string;
     payerEmail?: string;
-  }): Promise<{ success: boolean; subscriptionId: string }> {
+  }, authHeader?: string | null): Promise<{ success: boolean; subscriptionId: string }> {
     const {
       workspaceId,
       planSlug,
@@ -106,9 +237,10 @@ export const BillingEngine = {
       providerInvoiceId,
       payerEmail,
     } = params;
+    const db = this.getDb(authHeader);
 
     // 1. Obter o plano correspondente
-    const { data: plan } = await supabaseAdmin
+    const { data: plan } = await db
       .from("plans")
       .select("id, name, slug")
       .eq("slug", planSlug)
@@ -126,7 +258,7 @@ export const BillingEngine = {
 
     // 2. Upsert do cliente de billing se email fornecido
     if (payerEmail) {
-      await supabaseAdmin.from("billing_customers").upsert(
+      await db.from("billing_customers").upsert(
         {
           workspace_id: workspaceId,
           provider: "mercadopago",
@@ -139,7 +271,7 @@ export const BillingEngine = {
     }
 
     // 3. Criar ou atualizar assinatura
-    const { data: existingSub } = await supabaseAdmin
+    const { data: existingSub } = await db
       .from("subscriptions")
       .select("id")
       .eq("workspace_id", workspaceId)
@@ -149,7 +281,7 @@ export const BillingEngine = {
 
     if (existingSub) {
       subscriptionId = existingSub.id;
-      await supabaseAdmin
+      await db
         .from("subscriptions")
         .update({
           plan_id: plan.id,
@@ -165,7 +297,7 @@ export const BillingEngine = {
         })
         .eq("id", subscriptionId);
     } else {
-      const { data: newSub, error: insertError } = await supabaseAdmin
+      const { data: newSub, error: insertError } = await db
         .from("subscriptions")
         .insert({
           workspace_id: workspaceId,
@@ -186,7 +318,7 @@ export const BillingEngine = {
     }
 
     // 4. Inserir fatura paga
-    await supabaseAdmin.from("subscription_invoices").insert({
+    await db.from("subscription_invoices").insert({
       subscription_id: subscriptionId,
       workspace_id: workspaceId,
       provider_invoice_id: providerInvoiceId || `inv_${Date.now()}`,
@@ -198,8 +330,8 @@ export const BillingEngine = {
       paid_at: now.toISOString(),
     });
 
-    // 5. Ativar workspace via supabaseAdmin (bypassa trigger restritivo com autoridade de servidor)
-    await supabaseAdmin
+    // 5. Ativar workspace via db
+    await db
       .from("workspaces")
       .update({ status: "active", updated_at: now.toISOString() })
       .eq("id", workspaceId);
@@ -210,7 +342,7 @@ export const BillingEngine = {
       action: "payment_succeeded",
       reason: `Pagamento de R$ ${(amountCents / 100).toFixed(2)} confirmado para o plano ${plan.name} (${interval}).`,
       newValue: { plan: plan.slug, interval, amountCents, status: "active" },
-    });
+    }, authHeader);
 
     return { success: true, subscriptionId };
   },
@@ -222,10 +354,11 @@ export const BillingEngine = {
     workspaceId: string;
     subscriptionId: string;
     reason: string;
-  }): Promise<void> {
+  }, authHeader?: string | null): Promise<void> {
     const { workspaceId, subscriptionId, reason } = params;
+    const db = this.getDb(authHeader);
 
-    await supabaseAdmin
+    await db
       .from("subscriptions")
       .update({
         status: "past_due" as SubscriptionStatus,
@@ -238,16 +371,17 @@ export const BillingEngine = {
       action: "payment_failed",
       reason: `Falha no processamento do pagamento: ${reason}. Workspace em tolerância.`,
       result: "failed",
-    });
+    }, authHeader);
   },
 
   /**
    * Cancela a assinatura ao término do período pago.
    */
-  async cancelSubscription(workspaceId: string): Promise<boolean> {
+  async cancelSubscription(workspaceId: string, authHeader?: string | null): Promise<boolean> {
     const now = new Date().toISOString();
+    const db = this.getDb(authHeader);
 
-    const { data: sub } = await supabaseAdmin
+    const { data: sub } = await db
       .from("subscriptions")
       .select("id, current_period_end")
       .eq("workspace_id", workspaceId)
@@ -255,7 +389,7 @@ export const BillingEngine = {
 
     if (!sub) return false;
 
-    await supabaseAdmin
+    await db
       .from("subscriptions")
       .update({
         cancel_at_period_end: true,
@@ -269,7 +403,7 @@ export const BillingEngine = {
       action: "subscription_canceled",
       reason: "Cancelamento solicitado pelo usuário. Acesso garantido até o fim do período vigente.",
       newValue: { cancel_at_period_end: true, period_end: sub.current_period_end },
-    });
+    }, authHeader);
 
     return true;
   },
@@ -277,10 +411,11 @@ export const BillingEngine = {
   /**
    * Expira o período de trial colocando o workspace em modo read_only.
    */
-  async expireTrial(workspaceId: string): Promise<void> {
+  async expireTrial(workspaceId: string, authHeader?: string | null): Promise<void> {
     const now = new Date().toISOString();
+    const db = this.getDb(authHeader);
 
-    await supabaseAdmin
+    await db
       .from("workspaces")
       .update({ status: "read_only", updated_at: now })
       .eq("id", workspaceId);
@@ -290,16 +425,17 @@ export const BillingEngine = {
       action: "trial_expired",
       reason: "Período de testes de 14 dias encerrado sem assinatura ativa. Workspace bloqueado em read-only.",
       newValue: { status: "read_only" },
-    });
+    }, authHeader);
   },
 
   /**
    * Reativa um workspace após pagamento ou assinatura confirmada.
    */
-  async reactivateWorkspace(workspaceId: string): Promise<void> {
+  async reactivateWorkspace(workspaceId: string, authHeader?: string | null): Promise<void> {
     const now = new Date().toISOString();
+    const db = this.getDb(authHeader);
 
-    await supabaseAdmin
+    await db
       .from("workspaces")
       .update({ status: "active", updated_at: now })
       .eq("id", workspaceId);
@@ -309,7 +445,7 @@ export const BillingEngine = {
       action: "workspace_reactivated",
       reason: "Workspace reativado com sucesso.",
       newValue: { status: "active" },
-    });
+    }, authHeader);
   },
 
   /**
@@ -322,9 +458,10 @@ export const BillingEngine = {
     oldValue?: Record<string, unknown> | undefined;
     newValue?: Record<string, unknown> | undefined;
     result?: "success" | "failed" | undefined;
-  }): Promise<void> {
+  }, authHeader?: string | null): Promise<void> {
     try {
-      await supabaseAdmin.from("audit_logs").insert({
+      const db = this.getDb(authHeader);
+      await db.from("audit_logs").insert({
         workspace_id: params.workspaceId,
         actor_type: "system",
         action: `billing:${params.action}`,
