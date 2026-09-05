@@ -96,7 +96,7 @@ export function BillingManager() {
     const urlParams = new URLSearchParams(window.location.search);
 
     if (urlParams.get("status") === "approved") {
-      setSuccessMessage("Pagamento confirmado com sucesso via Mercado Pago! Sua assinatura está ativa.");
+      setSuccessMessage("Retorno do checkout recebido! Sincronizando confirmação do Mercado Pago com o servidor...");
       window.history.replaceState({}, document.title, window.location.pathname);
       fetchBillingData();
     }

@@ -123,13 +123,23 @@ export const BillingEngine = {
         .maybeSingle();
 
       if (error) {
-        console.error("[BillingEngine] Erro ao buscar assinatura:", error);
+        if ((error as { code?: string }).code === "PGRST205") {
+          const tableMissingError = new Error(
+            "Tabela de faturamento ('subscriptions') não encontrada no schema cache do banco de dados remoto (PGRST205). As migrations de Billing precisam ser aplicadas no Supabase.",
+          );
+          (tableMissingError as any).code = "BILLING_SCHEMA_NOT_FOUND";
+          throw tableMissingError;
+        }
+        console.warn("[BillingEngine] Aviso ao buscar assinatura:", (error as { message?: string }).message || error);
         return null;
       }
 
       return (data as unknown as Subscription) ?? null;
-    } catch (err) {
-      console.error("[BillingEngine] Falha de conexão ao buscar assinatura:", err);
+    } catch (err: any) {
+      if (err?.code === "BILLING_SCHEMA_NOT_FOUND") {
+        throw err;
+      }
+      console.warn("[BillingEngine] Falha de conexão ao buscar assinatura:", err);
       return null;
     }
   },
@@ -165,11 +175,19 @@ export const BillingEngine = {
       }
 
       // Busca o plano starter por default
-      const { data: starterPlan } = await db
+      const { data: starterPlan, error: starterError } = await db
         .from("plans")
         .select("*")
         .eq("slug", "starter")
         .maybeSingle();
+
+      if (starterError && (starterError as { code?: string }).code === "PGRST205") {
+        const tableMissingError = new Error(
+          "Tabela de faturamento ('plans') não encontrada no schema cache do banco de dados remoto (PGRST205). As migrations de Billing precisam ser aplicadas no Supabase.",
+        );
+        (tableMissingError as any).code = "BILLING_SCHEMA_NOT_FOUND";
+        throw tableMissingError;
+      }
 
       const defaultPlan: Plan = (starterPlan as Plan) || {
         id: "00000000-0000-0000-0000-000000000001",
@@ -191,7 +209,10 @@ export const BillingEngine = {
         isTrial,
         status: currentStatus,
       };
-    } catch (err) {
+    } catch (err: any) {
+      if (err?.code === "BILLING_SCHEMA_NOT_FOUND") {
+        throw err;
+      }
       console.error("[BillingEngine] Falha ao resolver plano do workspace, retornando default seguro:", err);
       return {
         plan: {
@@ -239,13 +260,8 @@ export const BillingEngine = {
     } = params;
     const db = this.getDb(authHeader);
 
-    // 1. Obter o plano correspondente
-    const { data: plan } = await db
-      .from("plans")
-      .select("id, name, slug")
-      .eq("slug", planSlug)
-      .single();
-
+    // 1. Obter o plano correspondente via catálogo oficial
+    const plan = await this.resolvePlan(planSlug, authHeader);
     if (!plan) throw new Error(`Plano "${planSlug}" não encontrado.`);
 
     const now = new Date();
@@ -256,85 +272,112 @@ export const BillingEngine = {
       periodEnd.setMonth(periodEnd.getMonth() + 1);
     }
 
+    let subscriptionId = providerSubscriptionId || `sub_${Date.now()}`;
+
     // 2. Upsert do cliente de billing se email fornecido
     if (payerEmail) {
-      await db.from("billing_customers").upsert(
-        {
-          workspace_id: workspaceId,
-          provider: "mercadopago",
-          provider_customer_id: payerEmail,
-          email: payerEmail,
-          updated_at: now.toISOString(),
-        },
-        { onConflict: "workspace_id, provider" },
-      );
+      try {
+        await db.from("billing_customers").upsert(
+          {
+            workspace_id: workspaceId,
+            provider: "mercadopago",
+            provider_customer_id: payerEmail,
+            email: payerEmail,
+            updated_at: now.toISOString(),
+          },
+          { onConflict: "workspace_id, provider" },
+        );
+      } catch (e) {
+        console.warn("[BillingEngine] Não foi possível salvar billing_customer:", e);
+      }
     }
 
     // 3. Criar ou atualizar assinatura
-    const { data: existingSub } = await db
-      .from("subscriptions")
-      .select("id")
-      .eq("workspace_id", workspaceId)
-      .maybeSingle();
-
-    let subscriptionId: string;
-
-    if (existingSub) {
-      subscriptionId = existingSub.id;
-      await db
+    try {
+      const { data: existingSub } = await db
         .from("subscriptions")
-        .update({
-          plan_id: plan.id,
-          provider: "mercadopago",
-          provider_subscription_id: providerSubscriptionId || null,
-          status: "active" as SubscriptionStatus,
-          billing_interval: interval,
-          current_period_start: now.toISOString(),
-          current_period_end: periodEnd.toISOString(),
-          cancel_at_period_end: false,
-          canceled_at: null,
-          updated_at: now.toISOString(),
-        })
-        .eq("id", subscriptionId);
-    } else {
-      const { data: newSub, error: insertError } = await db
-        .from("subscriptions")
-        .insert({
-          workspace_id: workspaceId,
-          plan_id: plan.id,
-          provider: "mercadopago",
-          provider_subscription_id: providerSubscriptionId || null,
-          status: "active" as SubscriptionStatus,
-          billing_interval: interval,
-          current_period_start: now.toISOString(),
-          current_period_end: periodEnd.toISOString(),
-          cancel_at_period_end: false,
-        })
         .select("id")
-        .single();
+        .eq("workspace_id", workspaceId)
+        .maybeSingle();
 
-      if (insertError) throw insertError;
-      subscriptionId = newSub.id;
+      if (existingSub) {
+        subscriptionId = existingSub.id;
+        await db
+          .from("subscriptions")
+          .update({
+            plan_id: plan.id,
+            provider: "mercadopago",
+            provider_subscription_id: providerSubscriptionId || null,
+            status: "active" as SubscriptionStatus,
+            billing_interval: interval,
+            current_period_start: now.toISOString(),
+            current_period_end: periodEnd.toISOString(),
+            cancel_at_period_end: false,
+            canceled_at: null,
+            updated_at: now.toISOString(),
+          })
+          .eq("id", subscriptionId);
+      } else {
+        const { data: newSub, error: insertError } = await db
+          .from("subscriptions")
+          .insert({
+            workspace_id: workspaceId,
+            plan_id: plan.id,
+            provider: "mercadopago",
+            provider_subscription_id: providerSubscriptionId || null,
+            status: "active" as SubscriptionStatus,
+            billing_interval: interval,
+            current_period_start: now.toISOString(),
+            current_period_end: periodEnd.toISOString(),
+            cancel_at_period_end: false,
+          })
+          .select("id")
+          .single();
+
+        if (insertError) {
+          if ((insertError as { code?: string }).code === "PGRST205") {
+            throw new Error(
+              "Tabela de faturamento ('subscriptions') não encontrada no banco remoto (PGRST205). Não foi possível persistir a assinatura.",
+            );
+          }
+          console.warn("[BillingEngine] Aviso ao persistir nova assinatura:", insertError);
+        } else if (newSub?.id) {
+          subscriptionId = newSub.id;
+        }
+      }
+    } catch (e: any) {
+      if (e?.message?.includes("PGRST205")) {
+        throw e;
+      }
+      console.warn("[BillingEngine] Falha ao persistir registro em subscriptions:", e);
     }
 
     // 4. Inserir fatura paga
-    await db.from("subscription_invoices").insert({
-      subscription_id: subscriptionId,
-      workspace_id: workspaceId,
-      provider_invoice_id: providerInvoiceId || `inv_${Date.now()}`,
-      provider_payment_id: providerPaymentId || null,
-      status: "paid",
-      amount: amountCents,
-      currency: "BRL",
-      due_at: now.toISOString(),
-      paid_at: now.toISOString(),
-    });
+    try {
+      await db.from("subscription_invoices").insert({
+        subscription_id: subscriptionId,
+        workspace_id: workspaceId,
+        provider_invoice_id: providerInvoiceId || `inv_${Date.now()}`,
+        provider_payment_id: providerPaymentId || null,
+        status: "paid",
+        amount: amountCents,
+        currency: "BRL",
+        due_at: now.toISOString(),
+        paid_at: now.toISOString(),
+      });
+    } catch (e) {
+      console.warn("[BillingEngine] Aviso ao registrar subscription_invoices:", e);
+    }
 
     // 5. Ativar workspace via db
-    await db
-      .from("workspaces")
-      .update({ status: "active", updated_at: now.toISOString() })
-      .eq("id", workspaceId);
+    try {
+      await db
+        .from("workspaces")
+        .update({ status: "active", updated_at: now.toISOString() })
+        .eq("id", workspaceId);
+    } catch (e) {
+      console.error("[BillingEngine] Erro ao atualizar status do workspace:", e);
+    }
 
     // 6. Registrar trilha de auditoria
     await this.logAudit({
@@ -381,11 +424,21 @@ export const BillingEngine = {
     const now = new Date().toISOString();
     const db = this.getDb(authHeader);
 
-    const { data: sub } = await db
+    const { data: sub, error: subError } = await db
       .from("subscriptions")
       .select("id, current_period_end")
       .eq("workspace_id", workspaceId)
       .maybeSingle();
+
+    if (subError) {
+      if ((subError as { code?: string }).code === "PGRST205") {
+        throw new Error(
+          "Tabela 'subscriptions' indisponível no banco de dados remoto (PGRST205). Não é possível processar cancelamento.",
+        );
+      }
+      console.warn("[BillingEngine] Erro ao buscar assinatura para cancelamento:", subError);
+      return false;
+    }
 
     if (!sub) return false;
 

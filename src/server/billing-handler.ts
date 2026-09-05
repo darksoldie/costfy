@@ -133,6 +133,32 @@ export async function handleBillingRequest(request: Request): Promise<Response> 
         );
       }
 
+      // Validação de RBAC do usuário solicitante
+      let userEmail: string | undefined;
+      if (authHeader) {
+        const {
+          data: { user },
+        } = await db.auth.getUser();
+        if (user) {
+          userEmail = user.email;
+          const { data: member } = await db
+            .from("workspace_members")
+            .select("role")
+            .eq("workspace_id", body.workspaceId)
+            .eq("user_id", user.id)
+            .maybeSingle();
+
+          if (member && !["owner", "admin"].includes(member.role)) {
+            return new Response(
+              JSON.stringify({
+                error: "Apenas proprietários e administradores podem gerenciar o faturamento deste workspace.",
+              }),
+              { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+            );
+          }
+        }
+      }
+
       const plan = await BillingEngine.resolvePlan(body.planSlug, authHeader);
 
       if (!plan) {
@@ -148,8 +174,10 @@ export async function handleBillingRequest(request: Request): Promise<Response> 
       }
 
       const amountCents = body.interval === "annual" ? plan.annual_price : plan.monthly_price;
-      const baseHost = url.origin || "http://localhost:8080";
+      const configuredBase = process.env["APP_BASE_URL"] || process.env["VITE_APP_BASE_URL"];
+      const baseHost = configuredBase || (url.origin && !url.origin.includes("localhost") ? url.origin : "https://app.costfy.com.br");
       const returnUrl = body.returnUrl || `${baseHost}/billing`;
+      const payerEmail = body.email || userEmail || "financeiro@costfy.com.br";
 
       const checkout = await defaultBillingProvider.createCheckout({
         workspaceId: body.workspaceId,
@@ -158,7 +186,7 @@ export async function handleBillingRequest(request: Request): Promise<Response> 
         amountCents,
         currency: plan.currency || "BRL",
         interval: body.interval || "monthly",
-        payerEmail: body.email || "contato@costfy.com.br",
+        payerEmail,
         returnUrl,
       });
 
@@ -176,6 +204,36 @@ export async function handleBillingRequest(request: Request): Promise<Response> 
           status: 400,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
         });
+      }
+
+      // Validação de RBAC do usuário solicitante
+      if (authHeader) {
+        const {
+          data: { user },
+        } = await db.auth.getUser();
+        if (user) {
+          const { data: member } = await db
+            .from("workspace_members")
+            .select("role")
+            .eq("workspace_id", body.workspaceId)
+            .eq("user_id", user.id)
+            .maybeSingle();
+
+          if (member && !["owner", "admin"].includes(member.role)) {
+            return new Response(
+              JSON.stringify({
+                error: "Apenas proprietários e administradores podem cancelar assinaturas.",
+              }),
+              { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+            );
+          }
+        }
+      }
+
+      // Consultar se existe assinatura ativa com ID do gateway
+      const existingSub = await BillingEngine.getWorkspaceSubscription(body.workspaceId, authHeader);
+      if (existingSub?.provider_subscription_id) {
+        await defaultBillingProvider.cancelSubscription(existingSub.provider_subscription_id);
       }
 
       const success = await BillingEngine.cancelSubscription(body.workspaceId, authHeader);

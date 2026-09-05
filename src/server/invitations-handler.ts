@@ -1,4 +1,6 @@
 import { getServerSupabaseClient } from "./server-supabase";
+import { BillingEngine } from "./billing-engine";
+import { UsageEngine, UNLIMITED } from "@/lib/usage-engine";
 import type { AppRole } from "@/lib/workspaces";
 
 export async function handleInvitationsRequest(request: Request): Promise<Response> {
@@ -92,6 +94,38 @@ export async function handleInvitationsRequest(request: Request): Promise<Respon
           JSON.stringify({ error: "Apenas proprietários e administradores podem convidar membros." }),
           { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } },
         );
+      }
+
+      // Verificação de Limites do Plano (Usage & Entitlements Engine)
+      try {
+        const { plan, isTrial, status } = await BillingEngine.getWorkspacePlan(body.workspaceId, authHeader);
+        if (status === "read_only") {
+          return new Response(
+            JSON.stringify({
+              error: "Este workspace está em modo somente leitura devido ao término do período de teste. Regularize a assinatura para convidar novos membros.",
+            }),
+            { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+          );
+        }
+
+        const maxMembers = UsageEngine.getLimit({ planSlug: plan.slug, isTrial, resourceKey: "members" });
+        if (maxMembers !== UNLIMITED) {
+          const { count: currentMembers } = await db
+            .from("workspace_members")
+            .select("id", { count: "exact", head: true })
+            .eq("workspace_id", body.workspaceId);
+
+          if ((currentMembers || 0) >= maxMembers) {
+            return new Response(
+              JSON.stringify({
+                error: `Limite de membros atingido (${currentMembers}/${maxMembers}) para o plano ${plan.name.toUpperCase()}. Faça upgrade de plano para convidar mais pessoas.`,
+              }),
+              { status: 403, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+            );
+          }
+        }
+      } catch (limitErr) {
+        console.warn("[handleInvitationsRequest] Não foi possível verificar limites de faturamento:", limitErr);
       }
 
       // Gerar token seguro de 32 bytes (UUID v4 + timestamp)

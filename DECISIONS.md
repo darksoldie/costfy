@@ -36,3 +36,18 @@
   2. Implemented `/api/track` in `src/server/tracking-handler.ts` using `supabaseAdmin`.
   3. Implemented `/api/webhooks/:provider` in `src/server/webhook-handler.ts` and `src/server/webhook-engine.ts` with adapters for Hotmart, Kiwify, and Stripe, strictly enforcing idempotency and customer/product/item synchronization.
 - **Consequence**: Immediate capability to receive orders and track visitor sessions from external websites and checkouts.
+
+---
+
+## ADR-005: Commercial Billing Architecture and Mercado Pago Preapproval Integration
+
+- **Date**: 2026-09-04
+- **Context**: Costfy required commercial billing with real payment gateways, recurring subscriptions, plan catalog, member seat limits, and webhook handling.
+- **Decision**:
+  1. Selected Mercado Pago Subscriptions API (`/preapproval`) for recurring BRL payments.
+  2. Implemented `resolveReturnUrl()` dynamically supporting `APP_BASE_URL` with production fallback to `https://app.costfy.com.br/billing` (preventing Mercado Pago 400 rejection of `http://localhost`).
+  3. Mandated that return from checkout never equates to payment confirmation; subscriptions are activated exclusively via authenticated webhook events or polling verification with the gateway.
+  4. Added automated fallback in `/api/billing/webhook` to retrieve real preapproval details directly from the Mercado Pago API if webhook payloads omit status or metadata.
+  5. Enforced server-side seat limits in `invitations-handler.ts` via `UsageEngine.getLimit("members")`.
+  6. Fortified database resilience in `BillingEngine` against PGRST205 (schema cache lag) to ensure zero downtime while remote migrations are applied.
+- **Consequence**: End-to-end commercial billing ready for production without fake checkouts or client-side trust assumptions.

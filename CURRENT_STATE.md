@@ -59,11 +59,24 @@
     - Catálogo de produtos, clientes e pedidos com histórico.
     - Relatórios executivos formatados e preparados para impressão/PDF nativo.
 
+11. **Billing Comercial & Assinaturas Recorrentes Mercado Pago**:
+    - Motor oficial `MercadoPagoProvider` com integração via API de Preapproval (`/preapproval`).
+    - Catálogo oficial canônico e precificação com 20% OFF no plano anual (Starter R$ 59,90/mês e R$ 575,00/ano; Growth R$ 149,90/mês e R$ 1.439,00/ano; Scale R$ 299,90/mês e R$ 2.879,00/ano).
+    - Tratamento inteligente de URLs de retorno (`APP_BASE_URL` ou fallback em produção para `https://app.costfy.com.br/billing`).
+    - Webhooks de cobrança em `/api/billing/webhook` com validação de assinatura, consulta fallback na API do Mercado Pago e idempotência em `billing_webhook_events`.
+    - Handlers seguros com RBAC estrito (`owner` e `admin`) em `/api/billing/checkout` e `/api/billing/cancel`.
+    - Handshake e polling com sincronização de status na UI (`BillingManager`) sem confirmação precipitada de checkout.
+    - Controle server-side de limites de assentos e membros em `invitations-handler.ts`.
+
 ---
 
 ## 2. O Que Requer Configurações Externas do Usuário
 
-1. **Meta Ads & Google Ads OAuth**:
-   - Requer inserção de `APP_ID` e `APP_SECRET` registrados pelo cliente nos painéis do Meta for Developers e Google Cloud Console para abrir a tela de consentimento de leitura de campanhas externas.
-2. **LLM Aberta com Streaming no Brain**:
-   - Requer inserção da chave de API (`GEMINI_API_KEY` ou `ANTHROPIC_API_KEY`) no ambiente para perguntas em linguagem natural aberta além do motor analítico determinístico.
+1. **Aplicação das Migrations de Billing no Banco Remoto**:
+   - O banco remoto conectado (`tnljmrethuoarsgtbxxa`) requer a execução das 3 migrations versionadas (`20260902040000_billing_foundation.sql`, `20260902041000_billing_seed_plans.sql`, `20260903000000_update_plans_annual_discount.sql`) via Editor SQL do painel do Supabase / Lovable.
+2. **Webhook URL Pública no Mercado Pago**:
+   - Para receber webhooks reais em tempo real, configurar a URL HTTPS pública (`https://app.costfy.com.br/api/billing/webhook` ou túnel como ngrok para testes locais) no Mercado Pago Developers.
+3. **Meta Ads & Google Ads OAuth**:
+   - Requer inserção de `APP_ID` e `APP_SECRET` registrados pelo cliente nos painéis do Meta for Developers e Google Cloud Console.
+4. **LLM Aberta com Streaming no Brain**:
+   - Requer inserção da chave de API (`GEMINI_API_KEY` ou `ANTHROPIC_API_KEY`) no ambiente para chat aberto.

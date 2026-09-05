@@ -44,6 +44,30 @@ export class MercadoPagoProvider implements BillingProvider {
     return process.env["MERCADOPAGO_WEBHOOK_SECRET"] || null;
   }
 
+  private resolveReturnUrl(returnUrl?: string): string {
+    const configuredBase = process.env["APP_BASE_URL"] || process.env["VITE_APP_BASE_URL"];
+    if (configuredBase) {
+      const cleanBase = configuredBase.replace(/\/+$/, "");
+      return `${cleanBase}/billing`;
+    }
+
+    if (returnUrl && returnUrl.startsWith("https://")) {
+      return returnUrl;
+    }
+
+    // Mercado Pago exige URL válida com https (rejeita http://localhost)
+    if (
+      process.env["NODE_ENV"] === "production" ||
+      !returnUrl ||
+      returnUrl.includes("localhost") ||
+      returnUrl.includes("127.0.0.1")
+    ) {
+      return "https://app.costfy.com.br/billing";
+    }
+
+    return returnUrl;
+  }
+
   /**
    * Cria uma sessão de checkout ou assinatura recorrente (Preapproval) no Mercado Pago.
    * Se o token não estiver configurado no ambiente, opera em modo Sandbox seguro.
@@ -62,6 +86,7 @@ export class MercadoPagoProvider implements BillingProvider {
     try {
       const frequency = params.interval === "annual" ? 12 : 1;
       const amountInReais = params.amountCents / 100;
+      const effectiveReturnUrl = this.resolveReturnUrl(params.returnUrl);
 
       const payload = {
         reason: `Costfy ${params.planName} (${params.interval === "annual" ? "Anual" : "Mensal"})`,
@@ -72,7 +97,7 @@ export class MercadoPagoProvider implements BillingProvider {
           currency_id: params.currency || "BRL",
         },
         payer_email: params.payerEmail,
-        back_url: params.returnUrl,
+        back_url: effectiveReturnUrl,
         external_reference: JSON.stringify({
           workspaceId: params.workspaceId,
           planSlug: params.planSlug,
